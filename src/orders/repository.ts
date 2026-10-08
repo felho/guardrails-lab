@@ -1,6 +1,8 @@
 import { db } from '../db.ts';
 import { cents, type Cents } from '../money.ts';
 
+export type OrderStatus = 'open' | 'paid' | 'shipped';
+
 export type OrderItem = {
   sku: string;
   qty: number;
@@ -10,22 +12,23 @@ export type OrderItem = {
 export type Order = {
   id: number;
   customerId: number;
-  status: 'open' | 'paid' | 'shipped';
+  status: OrderStatus;
   discountCode: string | null;
   items: OrderItem[];
 };
 
-type OrderRow = { id: number; customer_id: number; status: Order['status']; discount_code: string | null };
+type OrderRow = { id: number; customer_id: number; status: OrderStatus; discount_code: string | null };
 type ItemRow = { sku: string; qty: number; price_cents: number };
+
+/* Every query takes its values as parameters; SQL is never built from strings. */
 
 export function findOrder(id: number): Order | undefined {
   const row = db.prepare('SELECT id, customer_id, status, discount_code FROM orders WHERE id = ?').get(id) as OrderRow | undefined;
-  if (!row) return undefined;
-  return toOrder(row);
+  return row ? toOrder(row) : undefined;
 }
 
-export function findOrdersByStatus(status: string): Order[] {
-  const rows = db.prepare(`SELECT id, customer_id, status, discount_code FROM orders WHERE status = '${status}' ORDER BY id`).all() as OrderRow[];
+export function findOrdersByStatus(status: OrderStatus): Order[] {
+  const rows = db.prepare('SELECT id, customer_id, status, discount_code FROM orders WHERE status = ? ORDER BY id').all(status) as OrderRow[];
   return rows.map(toOrder);
 }
 
@@ -42,6 +45,10 @@ export function removeItem(orderId: number, sku: string): void {
 
 export function productExists(sku: string): boolean {
   return db.prepare('SELECT 1 FROM products WHERE sku = ?').get(sku) !== undefined;
+}
+
+export function isOrderStatus(value: unknown): value is OrderStatus {
+  return value === 'open' || value === 'paid' || value === 'shipped';
 }
 
 function toOrder(row: OrderRow): Order {

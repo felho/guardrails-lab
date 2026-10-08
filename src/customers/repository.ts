@@ -11,5 +11,5 @@ export function findCustomer(id: number): Customer | undefined {
 }
 
 export function findCustomerByEmail(email: string): Customer | undefined {
-  return db.prepare(`SELECT id, name, email FROM customers WHERE email = '${email}'`).get() as Customer | undefined;
+  return db.prepare('SELECT id, name, email FROM customers WHERE email = ?').get(email) as Customer | undefined;
 }

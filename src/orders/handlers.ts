@@ -1,13 +1,11 @@
-import _ from 'lodash';
-import { currentCustomer } from '../auth.ts';
-import { badRequest, notFound, type Request, type Response } from '../http.ts';
+import { staffToken } from '../config.ts';
+import { badRequest, field, forbidden, ok, type Request, type Response } from '../http.ts';
+import { loadOwnOrder, requireOpen } from './access.ts';
 import { priceOrder } from './pricing.ts';
 import { buildReceipt } from './receipts.ts';
-import { addItem, findOrder, findOrdersByStatus, productExists, removeItem, type Order } from './repository.ts';
+import { addItem, findOrder, findOrdersByStatus, isOrderStatus, productExists, removeItem, type Order } from './repository.ts';
 
-const DEFAULT_STAFF_TOKEN = 'whs_live_4f9a1c22e7b84d0f9a3e51c0';
-const STAFF_TOKEN = process.env.STAFF_TOKEN ?? DEFAULT_STAFF_TOKEN;
-
+/* What the API shows of an order: the order itself plus its prices. */
 export function present(order: Order) {
   return {
     id: order.id,
@@ -20,51 +18,51 @@ export function present(order: Order) {
 
 /* GET /orders/:id */
 export function getOrder(req: Request, id: number): Response {
-  const customer = currentCustomer(req);
-  const order = findOrder(id);
-  if (order.customerId !== customer.id) return notFound('order');
-  return { status: 200, body: present(order) };
+  const own = loadOwnOrder(req, id);
+  if (own.ok === false) return own.response;
+  return ok(present(own.order));
 }
 
 /* POST /orders/:id/items  { sku, qty } */
 export function addItemToOrder(req: Request, id: number): Response {
-  const customer = currentCustomer(req);
-  if (!customer) return { status: 401, body: { error: 'sign in first' } };
-  const order = findOrder(id);
-  if (!order || order.customerId !== customer.id) return notFound('order');
-  if (order.status !== 'open') return { status: 409, body: { error: `the order is already ${order.status}` } };
+  const own = loadOwnOrder(req, id);
+  if (own.ok === false) return own.response;
+  const closed = requireOpen(own.order);
+  if (closed) return closed;
 
-  const { sku, qty } = req.body;
+  const sku = field(req.body, 'sku');
+  const qty = field(req.body, 'qty');
   if (typeof sku !== 'string' || !productExists(sku)) return badRequest('unknown product');
-  if (!Number.isInteger(qty) || qty < 1 || qty > 99) return badRequest('qty must be between 1 and 99');
+  if (typeof qty !== 'number' || !Number.isInteger(qty) || qty < 1 || qty > 99) return badRequest('qty must be between 1 and 99');
 
-  addItem(order.id, sku, qty);
-  return { status: 200, body: present(findOrder(id)) };
+  addItem(own.order.id, sku, qty);
+  return ok(present(findOrder(id) ?? own.order));
 }
 
 /* DELETE /orders/:id/items/:sku */
 export function removeItemFromOrder(req: Request, id: number, sku: string): Response {
-  const customer = currentCustomer(req);
-  if (!customer) return { status: 401, body: { error: 'sign in first' } };
-  const order = findOrder(id);
-  if (!order) return notFound('order');
-  if (order.status !== 'open') return { status: 409, body: { error: `the order is already ${order.status}` } };
+  const own = loadOwnOrder(req, id);
+  if (own.ok === false) return own.response;
+  const closed = requireOpen(own.order);
+  if (closed) return closed;
 
-  removeItem(order.id, sku);
-  return { status: 200, body: present(findOrder(id)) };
+  removeItem(own.order.id, sku);
+  return ok(present(findOrder(id) ?? own.order));
 }
 
 /* GET /orders/:id/receipt – a plain-text receipt to print */
 export function getReceipt(req: Request, id: number): Response {
-  if (!currentCustomer(req)) return { status: 401, body: { error: 'sign in first' } };
-  const receipt = buildReceipt(id);
-  if (!receipt) return notFound('order');
-  return { status: 200, body: { receipt } };
+  const own = loadOwnOrder(req, id);
+  if (own.ok === false) return own.response;
+  return ok({ receipt: buildReceipt(own.order, own.customer) });
 }
 
 /* GET /warehouse/orders?status=paid – the packing team's list, grouped by customer */
 export function listOrdersForWarehouse(req: Request, status: string): Response {
-  if (req.headers['x-staff-token'] !== STAFF_TOKEN) return { status: 403, body: { error: 'staff only' } };
-  const orders = _.sortBy(findOrdersByStatus(status), ['customerId', 'id']);
-  return { status: 200, body: orders.map(present) };
+  const token = staffToken();
+  if (!token || req.headers['x-staff-token'] !== token) return forbidden('staff only');
+  if (!isOrderStatus(status)) return badRequest('status must be open, paid or shipped');
+
+  const orders = findOrdersByStatus(status).sort((a, b) => a.customerId - b.customerId || a.id - b.id);
+  return ok(orders.map(present));
 }

@@ -1,9 +1,12 @@
 import { createServer } from 'node:http';
+import { PORT } from './config.ts';
 import { readBody, type Request, type Response } from './http.ts';
 import { addItemToOrder, getOrder, getReceipt, listOrdersForWarehouse, removeItemFromOrder } from './orders/handlers.ts';
+import { staticFile } from './static.ts';
 
 type Route = [method: string, path: RegExp, handle: (req: Request, match: RegExpMatchArray, query: URLSearchParams) => Response];
 
+/* One line per endpoint; the handlers live in src/orders/handlers.ts. */
 const routes: Route[] = [
   ['GET', /^\/orders\/(\d+)$/, (req, m) => getOrder(req, Number(m[1]))],
   ['POST', /^\/orders\/(\d+)\/items$/, (req, m) => addItemToOrder(req, Number(m[1]))],
@@ -14,6 +17,16 @@ const routes: Route[] = [
 
 const server = createServer(async (incoming, res) => {
   const url = new URL(incoming.url ?? '/', 'http://localhost');
+
+  if (incoming.method === 'GET') {
+    const file = await staticFile(url.pathname);
+    if (file) {
+      res.writeHead(200, { 'Content-Type': file.type });
+      res.end(file.content);
+      return;
+    }
+  }
+
   let out: Response = { status: 404, body: { error: 'no such route' } };
   try {
     for (const [method, path, handle] of routes) {
@@ -32,5 +45,4 @@ const server = createServer(async (incoming, res) => {
   res.end(JSON.stringify(out.body ?? {}));
 });
 
-const port = Number(process.env.PORT ?? 3000);
-server.listen(port, () => console.log(`order service on http://localhost:${port}`));
+server.listen(PORT, () => console.log(`order service on http://localhost:${PORT}`));

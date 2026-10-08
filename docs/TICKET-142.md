@@ -12,5 +12,6 @@ Marketing launches discount codes next week. The codes are already in the `disco
 - Applying a new code replaces the previous one.
 - `GET /orders/:id` shows the applied code and the discount it gives.
 - Free shipping is decided after the code's discount.
+- On the order page, a customer can type a code and apply it, sees the applied code and the discount in the price breakdown, and sees the message when a code is refused.
 
 The money rules are in `docs/money.md`.
