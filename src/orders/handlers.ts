@@ -21,8 +21,9 @@ export function present(order: Order) {
 /* GET /orders/:id */
 export function getOrder(req: Request, id: number): Response {
   const customer = currentCustomer(req);
+  if (!customer) return { status: 401, body: { error: 'sign in first' } };
   const order = findOrder(id);
-  if (order.customerId !== customer.id) return notFound('order');
+  if (!order || order.customerId !== customer.id) return notFound('order');
   return { status: 200, body: present(order) };
 }
 
@@ -34,12 +35,26 @@ export function addItemToOrder(req: Request, id: number): Response {
   if (!order || order.customerId !== customer.id) return notFound('order');
   if (order.status !== 'open') return { status: 409, body: { error: `the order is already ${order.status}` } };
 
-  const { sku, qty } = req.body;
-  if (typeof sku !== 'string' || !productExists(sku)) return badRequest('unknown product');
-  if (!Number.isInteger(qty) || qty < 1 || qty > 99) return badRequest('qty must be between 1 and 99');
+  const item = parseItem(req.body);
+  if (typeof item === 'string') return badRequest(item);
 
-  addItem(order.id, sku, qty);
-  return { status: 200, body: present(findOrder(id)) };
+  addItem(order.id, item.sku, item.qty);
+  return presentCurrent(id);
+}
+
+/* The { sku, qty } of a request body, or what is wrong with it. */
+function parseItem(body: unknown): { sku: string; qty: number } | string {
+  const { sku, qty } = (typeof body === 'object' && body !== null ? body : {}) as { sku?: unknown; qty?: unknown };
+  if (typeof sku !== 'string' || !productExists(sku)) return 'unknown product';
+  if (typeof qty !== 'number' || !Number.isInteger(qty) || qty < 1 || qty > 99) return 'qty must be between 1 and 99';
+  return { sku, qty };
+}
+
+/* The order as it is now, after a change. */
+function presentCurrent(id: number): Response {
+  const order = findOrder(id);
+  if (!order) return notFound('order');
+  return { status: 200, body: present(order) };
 }
 
 /* DELETE /orders/:id/items/:sku */
@@ -51,7 +66,7 @@ export function removeItemFromOrder(req: Request, id: number, sku: string): Resp
   if (order.status !== 'open') return { status: 409, body: { error: `the order is already ${order.status}` } };
 
   removeItem(order.id, sku);
-  return { status: 200, body: present(findOrder(id)) };
+  return presentCurrent(id);
 }
 
 /* GET /orders/:id/receipt – a plain-text receipt to print */

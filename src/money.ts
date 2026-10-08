@@ -5,7 +5,7 @@
 export type Cents = number & { readonly __brand: 'Cents' };
 
 export function cents(n: number): Cents {
-  if (!Number.isInteger(n)) throw new Error(`not a whole number of cents: ${n}`);
+  if (!Number.isInteger(n)) throw new Error(`not a whole number of cents: ${String(n)}`);
   return n as Cents;
 }
 
@@ -17,5 +17,5 @@ export function percentOf(amount: Cents, pct: number): Cents {
 export function formatCents(amount: Cents): string {
   const sign = amount < 0 ? '-' : '';
   const abs = Math.abs(amount);
-  return `${sign}€${Math.floor(abs / 100)}.${String(abs % 100).padStart(2, '0')}`;
+  return `${sign}€${String(Math.floor(abs / 100))}.${String(abs % 100).padStart(2, '0')}`;
 }

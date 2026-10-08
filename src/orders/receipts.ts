@@ -8,10 +8,11 @@ export function buildReceipt(orderId: number): string | undefined {
   const order = findOrder(orderId);
   if (!order) return undefined;
   const customer = findCustomer(order.customerId);
+  if (!customer) throw new Error(`order ${String(order.id)} has no customer`);
   const totals = priceOrder(order);
   return [
-    `Order ${order.id} · ${customer.name} <${customer.email}>`,
-    ...order.items.map((i) => `${i.qty} × ${i.sku}  ${formatCents(cents(i.unitPrice * i.qty))}`),
+    `Order ${String(order.id)} · ${customer.name} <${customer.email}>`,
+    ...order.items.map((i) => `${String(i.qty)} × ${i.sku}  ${formatCents(cents(i.unitPrice * i.qty))}`),
     `Shipping  ${formatCents(totals.shipping)}`,
     `Total  ${formatCents(totals.total)}`,
   ].join('\n');
