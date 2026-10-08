@@ -1,6 +1,7 @@
 import { api, ApiError } from './api.js';
 import { h, replace } from './dom.js';
 import { AddItemForm } from './components/AddItemForm.js';
+import { DiscountForm } from './components/DiscountForm.js';
 import { ItemList } from './components/ItemList.js';
 import { Notice } from './components/Notice.js';
 import { OrderHeader } from './components/OrderHeader.js';
@@ -44,7 +45,11 @@ function render() {
       ItemList({ order, onRemove: (sku) => run(() => api.removeItem(state.customerId, order.id, sku), `${sku} removed`) }),
       order.status === 'open' && AddItemForm({ onAdd: (sku, qty) => run(() => api.addItem(state.customerId, order.id, sku, qty), `${qty} × ${sku} added`) }),
     ),
-    order && h('section', {}, h('h2', {}, 'Price'), Totals({ order })),
+    order && h('section', {},
+      h('h2', {}, 'Price'),
+      Totals({ order }),
+      order.status === 'open' && DiscountForm({ onApply: (code) => run(() => api.applyDiscount(state.customerId, order.id, code), `${code.toUpperCase()} applied`) }),
+    ),
   );
 }
 

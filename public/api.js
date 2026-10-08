@@ -21,5 +21,6 @@ export const api = {
   getOrder: (customerId, orderId) => call('GET', `/orders/${orderId}`, { customerId }),
   addItem: (customerId, orderId, sku, qty) => call('POST', `/orders/${orderId}/items`, { customerId, body: { sku, qty } }),
   removeItem: (customerId, orderId, sku) => call('DELETE', `/orders/${orderId}/items/${sku}`, { customerId }),
+  applyDiscount: (customerId, orderId, code) => call('POST', `/orders/${orderId}/discount`, { customerId, body: { code } }),
   getReceipt: (customerId, orderId) => call('GET', `/orders/${orderId}/receipt`, { customerId }),
 };

@@ -1,18 +1,23 @@
 import { staffToken } from '../config.ts';
+import { findDiscountCode } from '../discounts/repository.ts';
 import { badRequest, field, forbidden, ok, type Request, type Response } from '../http.ts';
 import { loadOwnOrder, requireOpen } from './access.ts';
-import { priceOrder } from './pricing.ts';
+import { codeRefusal, goodsTotal, priceOrder, today } from './pricing.ts';
 import { buildReceipt } from './receipts.ts';
-import { addItem, findOrder, findOrdersByStatus, isOrderStatus, productExists, removeItem, type Order } from './repository.ts';
+import { addItem, findOrder, findOrdersByStatus, isOrderStatus, productExists, removeItem, setDiscountCode, type Order } from './repository.ts';
 
 /* What the API shows of an order: the order itself plus its prices. */
 export function present(order: Order) {
+  const day = today();
+  const totals = priceOrder(order, day);
   return {
     id: order.id,
     status: order.status,
-    discountCode: order.discountCode,
+    discountCode: order.discount?.code ?? null,
+    // why the applied code gives no discount right now, e.g. after items were removed
+    discountCodeProblem: order.discount ? codeRefusal(order.discount, goodsTotal(totals), day) ?? null : null,
     items: order.items,
-    ...priceOrder(order),
+    ...totals,
   };
 }
 
@@ -47,6 +52,25 @@ export function removeItemFromOrder(req: Request, id: number, sku: string): Resp
   if (closed) return closed;
 
   removeItem(own.order.id, sku);
+  return ok(present(findOrder(id) ?? own.order));
+}
+
+/* POST /orders/:id/discount  { code } – applies a discount code, replacing any earlier one */
+export function applyDiscountCode(req: Request, id: number): Response {
+  const own = loadOwnOrder(req, id);
+  if (own.ok === false) return own.response;
+  const closed = requireOpen(own.order);
+  if (closed) return closed;
+
+  const input = field(req.body, 'code');
+  if (typeof input !== 'string' || input.trim() === '') return badRequest('enter a discount code');
+  const code = findDiscountCode(input);
+  if (!code) return badRequest(`there is no discount code ${input.trim()}`);
+  const day = today();
+  const refusal = codeRefusal(code, goodsTotal(priceOrder({ ...own.order, discount: null }, day)), day);
+  if (refusal) return badRequest(refusal);
+
+  setDiscountCode(own.order.id, code.code);
   return ok(present(findOrder(id) ?? own.order));
 }
 

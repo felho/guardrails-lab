@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { findCustomerByEmail } from '../src/customers/repository.ts';
 import { seed } from '../src/db.ts';
-import { addItem, findOrder, findOrdersByStatus, removeItem } from '../src/orders/repository.ts';
+import { addItem, findOrder, findOrdersByStatus, removeItem, setDiscountCode } from '../src/orders/repository.ts';
 
 beforeEach(() => seed());
 
 describe('orders repository', () => {
   it('loads an order with its priced items', () => {
     expect(findOrder(1003)).toEqual({
-      id: 1003, customerId: 2, status: 'open', discountCode: null,
+      id: 1003, customerId: 2, status: 'open', discount: null,
       items: [{ sku: 'MUG', qty: 1, unitPrice: 1250 }, { sku: 'TEE', qty: 2, unitPrice: 2490 }],
     });
   });
@@ -25,6 +25,11 @@ describe('orders repository', () => {
   it('removes an item', () => {
     removeItem(1001, 'HOODIE');
     expect(findOrder(1001)?.items).toEqual([]);
+  });
+
+  it('loads the applied discount code', () => {
+    setDiscountCode(1001, 'SAVE15');
+    expect(findOrder(1001)?.discount).toEqual({ code: 'SAVE15', percent: 15, minOrder: 5000, expiresOn: '2099-12-31' });
   });
 
   it('filters by status', () => {

@@ -1,4 +1,5 @@
 import { db } from '../db.ts';
+import { findDiscountCode, type DiscountCode } from '../discounts/repository.ts';
 import { cents, type Cents } from '../money.ts';
 
 export type OrderStatus = 'open' | 'paid' | 'shipped';
@@ -13,7 +14,8 @@ export type Order = {
   id: number;
   customerId: number;
   status: OrderStatus;
-  discountCode: string | null;
+  /** The applied discount code, if any. */
+  discount: DiscountCode | null;
   items: OrderItem[];
 };
 
@@ -39,6 +41,10 @@ export function addItem(orderId: number, sku: string, qty: number): void {
   `).run(orderId, sku, qty);
 }
 
+export function setDiscountCode(orderId: number, code: string): void {
+  db.prepare('UPDATE orders SET discount_code = ? WHERE id = ?').run(code, orderId);
+}
+
 export function removeItem(orderId: number, sku: string): void {
   db.prepare('DELETE FROM order_items WHERE order_id = ? AND sku = ?').run(orderId, sku);
 }
@@ -60,7 +66,7 @@ function toOrder(row: OrderRow): Order {
     id: row.id,
     customerId: row.customer_id,
     status: row.status,
-    discountCode: row.discount_code,
+    discount: row.discount_code === null ? null : findDiscountCode(row.discount_code) ?? null,
     items: items.map((i) => ({ sku: i.sku, qty: i.qty, unitPrice: cents(i.price_cents) })),
   };
 }
