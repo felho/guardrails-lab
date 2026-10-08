@@ -12,6 +12,7 @@ export function buildReceipt(orderId: number): string | undefined {
   return [
     `Order ${order.id} · ${customer.name} <${customer.email}>`,
     ...order.items.map((i) => `${i.qty} × ${i.sku}  ${formatCents(cents(i.unitPrice * i.qty))}`),
+    ...(totals.codeDiscount > 0 ? [`Code ${order.discount.code}  ${formatCents(cents(-totals.codeDiscount))}`] : []),
     `Shipping  ${formatCents(totals.shipping)}`,
     `Total  ${formatCents(totals.total)}`,
   ].join('\n');

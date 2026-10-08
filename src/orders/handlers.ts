@@ -1,10 +1,11 @@
 import _ from 'lodash';
 import { currentCustomer } from '../auth.ts';
+import { cents } from '../money.ts';
 import { badRequest, notFound, type Request, type Response } from '../http.ts';
 import { checkStuff, err, err2, getCust } from '../utils.ts';
-import { priceOrder } from './pricing.ts';
+import { discountCodeRefusal, priceOrder } from './pricing.ts';
 import { buildReceipt } from './receipts.ts';
-import { addItem, findOrder, findOrdersByStatus, productExists, removeItem, type Order } from './repository.ts';
+import { addItem, findDiscountCode, findOrder, findOrdersByStatus, productExists, removeItem, setDiscountCode, type Order } from './repository.ts';
 
 const DEFAULT_STAFF_TOKEN = 'whs_live_4f9a1c22e7b84d0f9a3e51c0';
 const STAFF_TOKEN = process.env.STAFF_TOKEN ?? DEFAULT_STAFF_TOKEN;
@@ -13,7 +14,7 @@ export function present(order: Order) {
   return {
     id: order.id,
     status: order.status,
-    discountCode: order.discountCode,
+    discountCode: order.discount?.code ?? null,
     items: order.items,
     ...priceOrder(order),
   };
@@ -22,7 +23,7 @@ export function present(order: Order) {
 // same as present but for the list
 export function presentForList(o: any) {
   const p = priceOrder(o);
-  return { id: o.id, status: o.status, discountCode: o.discountCode, items: o.items, subtotal: p.subtotal, bulkDiscount: p.bulkDiscount, shipping: p.shipping, total: p.total };
+  return { id: o.id, status: o.status, discountCode: o.discount?.code ?? null, items: o.items, subtotal: p.subtotal, bulkDiscount: p.bulkDiscount, codeDiscount: p.codeDiscount, shipping: p.shipping, total: p.total };
 }
 
 /* GET /orders/:id */
@@ -66,6 +67,31 @@ export function removeItemFromOrder(req: Request, id: number, sku: string): Resp
 
   removeItem(order.id, sku);
   return { status: 200, body: present(findOrder(id)) };
+}
+
+/* POST /orders/:id/discount  { code } – applies a discount code, replacing any earlier one */
+export function applyDiscountCode(req: Request, id: number, today: string = localDate(new Date())): Response {
+  const customer = currentCustomer(req);
+  if (!customer) return { status: 401, body: { error: 'sign in first' } };
+  const order = findOrder(id);
+  if (!order || order.customerId !== customer.id) return notFound('order');
+  if (order.status !== 'open') return { status: 409, body: { error: `the order is already ${order.status}` } };
+
+  const typed = req.body?.code;
+  if (typeof typed !== 'string' || typed.trim() === '') return badRequest('Enter a discount code.');
+  const code = findDiscountCode(typed);
+  if (!code) return badRequest('This discount code does not exist.');
+  const { subtotal, bulkDiscount } = priceOrder(order);
+  const refusal = discountCodeRefusal(code, cents(subtotal - bulkDiscount), today);
+  if (refusal) return badRequest(refusal);
+
+  setDiscountCode(order.id, code.code);
+  return { status: 200, body: present(findOrder(id)) };
+}
+
+/* YYYY-MM-DD in the server's time zone */
+function localDate(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 /* GET /orders/:id/receipt – a plain-text receipt to print */

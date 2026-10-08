@@ -5,6 +5,10 @@ function money(c) {
   return '€' + (c / 100).toFixed(2);
 }
 
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, function (ch) { return '&#' + ch.charCodeAt(0) + ';'; });
+}
+
 function reload() {
   custId = document.getElementById('cust').value;
   var oid = document.getElementById('oid').value;
@@ -45,11 +49,13 @@ function render() {
   if (order.status == 'open') {
     html += '<div class="box">Add: <select id="sku"><option>MUG</option><option>TEE</option><option>CAP</option><option>HOODIE</option><option>SOCKS</option></select> ';
     html += '<input id="qty" value="1" size="3"> <button onclick="addIt()">add</button></div>';
+    html += '<div class="box">Discount code: <input id="code" size="12" onkeydown="if (event.key == \'Enter\') applyCode()"> <button onclick="applyCode()">apply</button></div>';
   }
 
   html += '<div class="box"><table>';
   html += '<tr><td>Subtotal</td><td class="r">' + money(order.subtotal) + '</td></tr>';
   if (order.bulkDiscount > 0) html += '<tr><td>Bulk discount</td><td class="r">-' + money(order.bulkDiscount) + '</td></tr>';
+  if (order.discountCode) html += '<tr><td>Discount code ' + esc(order.discountCode) + '</td><td class="r">-' + money(order.codeDiscount) + '</td></tr>';
   html += '<tr><td>Shipping</td><td class="r">' + money(order.shipping) + '</td></tr>';
   html += '<tr><td><b>Total</b></td><td class="r"><b>' + money(order.total) + '</b></td></tr>';
   html += '</table></div>';
@@ -79,6 +85,28 @@ function addIt() {
       document.getElementById('msg').innerHTML = '<p class="ok">added</p>';
     }
     fetch('/orders/' + order.id, { headers: { 'X-Customer-Id': custId } }).then(function (r2) { return r2.json(); }).then(function (j) { order = j; render(); });
+  });
+}
+
+function applyCode() {
+  var code = document.getElementById('code').value;
+  fetch('/orders/' + order.id + '/discount', { method: 'POST', headers: { 'X-Customer-Id': custId, 'Content-Type': 'application/json' }, body: JSON.stringify({ code: code }) }).then(function (r) {
+    return r.json().then(function (j) {
+      var msg = document.getElementById('msg');
+      msg.innerHTML = '';
+      var p = document.createElement('p');
+      if (r.status != 200) {
+        p.className = 'err';
+        p.textContent = j.error || 'error ' + r.status;
+        msg.appendChild(p);
+        return;
+      }
+      p.className = 'ok';
+      p.textContent = 'applied ' + j.discountCode;
+      msg.appendChild(p);
+      order = j;
+      render();
+    });
   });
 }
 
