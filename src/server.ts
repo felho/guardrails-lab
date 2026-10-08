@@ -1,4 +1,5 @@
 import { createServer } from 'node:http';
+import { readFileSync, existsSync } from 'node:fs';
 import { readBody, type Request, type Response } from './http.ts';
 import { addItemToOrder, getOrder, getReceipt, listOrdersForWarehouse, removeItemFromOrder } from './orders/handlers.ts';
 
@@ -12,8 +13,28 @@ const routes: Route[] = [
   ['GET', /^\/warehouse\/orders$/, (req, _m, q) => listOrdersForWarehouse(req, q.get('status') ?? 'paid')],
 ];
 
+const pub = new URL('../public/', import.meta.url).pathname;
+
 const server = createServer(async (incoming, res) => {
   const url = new URL(incoming.url ?? '/', 'http://localhost');
+
+  // frontend
+  if (incoming.method === 'GET' && url.pathname === '/') {
+    res.writeHead(200, { 'Content-Type': 'text/html' });
+    res.end(readFileSync(pub + 'index.html'));
+    return;
+  }
+  if (incoming.method === 'GET' && url.pathname === '/app.js') {
+    res.writeHead(200, { 'Content-Type': 'text/javascript' });
+    res.end(readFileSync(pub + 'app.js'));
+    return;
+  }
+  if (incoming.method === 'GET' && url.pathname.endsWith('.js') && existsSync(pub + url.pathname.slice(1))) {
+    res.writeHead(200, { 'Content-Type': 'text/javascript' });
+    res.end(readFileSync(pub + url.pathname.slice(1)));
+    return;
+  }
+
   let out: Response = { status: 404, body: { error: 'no such route' } };
   try {
     for (const [method, path, handle] of routes) {

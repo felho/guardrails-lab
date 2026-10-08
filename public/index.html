@@ -1,0 +1,28 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>orders</title>
+<style>
+body { font-family: Arial; margin: 20px; }
+#app { width: 600px; }
+.box { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; }
+.err { color: red !important; }
+.ok { color: green; }
+table { width: 100%; }
+td { padding: 2px; }
+.r { text-align: right; }
+button { cursor: pointer; }
+</style>
+</head>
+<body>
+<h1>Order service</h1>
+<div>
+  Customer: <select id="cust" onchange="reload()"><option value="1">Anna</option><option value="2">Bence</option><option value="3">Csilla</option></select>
+  Order: <input id="oid" value="1002" size="6" onchange="reload()">
+</div>
+<div id="msg"></div>
+<div id="app"></div>
+<script src="/app.js"></script>
+</body>
+</html>

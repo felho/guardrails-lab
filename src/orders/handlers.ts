@@ -1,6 +1,7 @@
 import _ from 'lodash';
 import { currentCustomer } from '../auth.ts';
 import { badRequest, notFound, type Request, type Response } from '../http.ts';
+import { checkStuff, err, err2, getCust } from '../utils.ts';
 import { priceOrder } from './pricing.ts';
 import { buildReceipt } from './receipts.ts';
 import { addItem, findOrder, findOrdersByStatus, productExists, removeItem, type Order } from './repository.ts';
@@ -18,6 +19,12 @@ export function present(order: Order) {
   };
 }
 
+// same as present but for the list
+export function presentForList(o: any) {
+  const p = priceOrder(o);
+  return { id: o.id, status: o.status, discountCode: o.discountCode, items: o.items, subtotal: p.subtotal, bulkDiscount: p.bulkDiscount, shipping: p.shipping, total: p.total };
+}
+
 /* GET /orders/:id */
 export function getOrder(req: Request, id: number): Response {
   const customer = currentCustomer(req);
@@ -28,15 +35,21 @@ export function getOrder(req: Request, id: number): Response {
 
 /* POST /orders/:id/items  { sku, qty } */
 export function addItemToOrder(req: Request, id: number): Response {
-  const customer = currentCustomer(req);
-  if (!customer) return { status: 401, body: { error: 'sign in first' } };
+  const cust = getCust(req);
+  if (!cust) return err(401, 'not logged in');
   const order = findOrder(id);
-  if (!order || order.customerId !== customer.id) return notFound('order');
-  if (order.status !== 'open') return { status: 409, body: { error: `the order is already ${order.status}` } };
+  if (!checkStuff(order, cust)) return notFound('order');
+  if (order.status != 'open') return { status: 409, body: { error: 'order is ' + order.status } };
 
-  const { sku, qty } = req.body;
-  if (typeof sku !== 'string' || !productExists(sku)) return badRequest('unknown product');
-  if (!Number.isInteger(qty) || qty < 1 || qty > 99) return badRequest('qty must be between 1 and 99');
+  var sku = req.body.sku;
+  var qty = req.body.qty;
+  if (!sku) return err2('sku missing');
+  if (typeof sku !== 'string') return err2('sku must be string');
+  if (!productExists(sku)) return badRequest('unknown product');
+  if (qty === undefined || qty === null) return err2('qty missing');
+  if (!Number.isInteger(qty)) return err2('qty must be int');
+  if (qty < 1) return err2('qty too small');
+  if (qty > 99) return err2('qty too big');
 
   addItem(order.id, sku, qty);
   return { status: 200, body: present(findOrder(id)) };
@@ -49,6 +62,7 @@ export function removeItemFromOrder(req: Request, id: number, sku: string): Resp
   const order = findOrder(id);
   if (!order) return notFound('order');
   if (order.status !== 'open') return { status: 409, body: { error: `the order is already ${order.status}` } };
+  // if (order.customerId !== customer.id) return notFound('order'); // breaks the admin tool, see #88
 
   removeItem(order.id, sku);
   return { status: 200, body: present(findOrder(id)) };
@@ -66,5 +80,5 @@ export function getReceipt(req: Request, id: number): Response {
 export function listOrdersForWarehouse(req: Request, status: string): Response {
   if (req.headers['x-staff-token'] !== STAFF_TOKEN) return { status: 403, body: { error: 'staff only' } };
   const orders = _.sortBy(findOrdersByStatus(status), ['customerId', 'id']);
-  return { status: 200, body: orders.map(present) };
+  return { status: 200, body: orders.map(presentForList) };
 }
