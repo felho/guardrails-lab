@@ -40,6 +40,10 @@ export function removeItem(orderId: number, sku: string): void {
   db.prepare('DELETE FROM order_items WHERE order_id = ? AND sku = ?').run(orderId, sku);
 }
 
+export function setDiscountCode(orderId: number, code: string | null): void {
+  db.prepare('UPDATE orders SET discount_code = ? WHERE id = ?').run(code, orderId);
+}
+
 export function productExists(sku: string): boolean {
   return db.prepare('SELECT 1 FROM products WHERE sku = ?').get(sku) !== undefined;
 }

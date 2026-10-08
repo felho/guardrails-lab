@@ -1,9 +1,11 @@
 import _ from 'lodash';
 import { currentCustomer } from '../auth.ts';
+import { cents } from '../money.ts';
 import { badRequest, notFound, type Request, type Response } from '../http.ts';
+import { appliedCode, findDiscountCode, refusal, today } from './discounts.ts';
 import { priceOrder } from './pricing.ts';
 import { buildReceipt } from './receipts.ts';
-import { addItem, findOrder, findOrdersByStatus, productExists, removeItem, type Order } from './repository.ts';
+import { addItem, findOrder, findOrdersByStatus, productExists, removeItem, setDiscountCode, type Order } from './repository.ts';
 
 const DEFAULT_STAFF_TOKEN = 'whs_live_4f9a1c22e7b84d0f9a3e51c0';
 const STAFF_TOKEN = process.env.STAFF_TOKEN ?? DEFAULT_STAFF_TOKEN;
@@ -14,7 +16,7 @@ export function present(order: Order) {
     status: order.status,
     discountCode: order.discountCode,
     items: order.items,
-    ...priceOrder(order),
+    ...priceOrder(order, appliedCode(order)),
   };
 }
 
@@ -51,6 +53,26 @@ export function removeItemFromOrder(req: Request, id: number, sku: string): Resp
   if (order.status !== 'open') return { status: 409, body: { error: `the order is already ${order.status}` } };
 
   removeItem(order.id, sku);
+  return { status: 200, body: present(findOrder(id)) };
+}
+
+/* POST /orders/:id/discount  { code } – applies a discount code, replacing any previous one */
+export function applyDiscountCode(req: Request, id: number): Response {
+  const customer = currentCustomer(req);
+  if (!customer) return { status: 401, body: { error: 'sign in first' } };
+  const order = findOrder(id);
+  if (!order || order.customerId !== customer.id) return notFound('order');
+  if (order.status !== 'open') return { status: 409, body: { error: `the order is already ${order.status}` } };
+
+  const { code } = req.body;
+  if (typeof code !== 'string' || code.trim() === '') return badRequest('code is required');
+  const discount = findDiscountCode(code);
+  if (!discount) return badRequest('unknown discount code');
+  const { subtotal, bulkDiscount } = priceOrder(order);
+  const refused = refusal(discount, cents(subtotal - bulkDiscount), today());
+  if (refused) return badRequest(refused);
+
+  setDiscountCode(order.id, discount.code);
   return { status: 200, body: present(findOrder(id)) };
 }
 

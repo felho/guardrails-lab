@@ -1,4 +1,5 @@
 import { cents, percentOf, type Cents } from '../money.ts';
+import { refusal, today, type DiscountCode } from './discounts.ts';
 import type { Order } from './repository.ts';
 
 export const FREE_SHIPPING_FROM = cents(5000);
@@ -7,12 +8,16 @@ export const SHIPPING = cents(490);
 export type Totals = {
   subtotal: Cents;
   bulkDiscount: Cents;
+  codeDiscount: Cents;
   shipping: Cents;
   total: Cents;
 };
 
-/* Prices an order: the items, the bulk discount, then shipping. */
-export function priceOrder(order: Order): Totals {
+/*
+ * Prices an order: the items, the bulk discount, the discount code, then shipping.
+ * The code only counts while the order still qualifies for it on `on` (not expired, minimum reached).
+ */
+export function priceOrder(order: Order, code?: DiscountCode, on = today()): Totals {
   let subtotal = 0;
   let bulkDiscount = 0;
   for (const item of order.items) {
@@ -27,18 +32,22 @@ export function priceOrder(order: Order): Totals {
     }
   }
 
-  const goods = subtotal - bulkDiscount;
+  const goods = cents(subtotal - bulkDiscount);
+  const codeDiscount = code && !refusal(code, goods, on) ? percentOf(goods, code.percent) : cents(0);
+  const discounted = goods - codeDiscount;
+
   let shipping = SHIPPING;
   if (order.items.length === 0) {
     shipping = cents(0);
-  } else if (goods >= FREE_SHIPPING_FROM) {
+  } else if (discounted >= FREE_SHIPPING_FROM) {
     shipping = cents(0);
   }
 
   return {
     subtotal: cents(subtotal),
     bulkDiscount: cents(bulkDiscount),
+    codeDiscount,
     shipping,
-    total: cents(goods + shipping),
+    total: cents(discounted + shipping),
   };
 }

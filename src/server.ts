@@ -1,6 +1,6 @@
 import { createServer } from 'node:http';
 import { readBody, type Request, type Response } from './http.ts';
-import { addItemToOrder, getOrder, getReceipt, listOrdersForWarehouse, removeItemFromOrder } from './orders/handlers.ts';
+import { addItemToOrder, applyDiscountCode, getOrder, getReceipt, listOrdersForWarehouse, removeItemFromOrder } from './orders/handlers.ts';
 
 type Route = [method: string, path: RegExp, handle: (req: Request, match: RegExpMatchArray, query: URLSearchParams) => Response];
 
@@ -8,6 +8,7 @@ const routes: Route[] = [
   ['GET', /^\/orders\/(\d+)$/, (req, m) => getOrder(req, Number(m[1]))],
   ['POST', /^\/orders\/(\d+)\/items$/, (req, m) => addItemToOrder(req, Number(m[1]))],
   ['DELETE', /^\/orders\/(\d+)\/items\/([A-Z]+)$/, (req, m) => removeItemFromOrder(req, Number(m[1]), m[2])],
+  ['POST', /^\/orders\/(\d+)\/discount$/, (req, m) => applyDiscountCode(req, Number(m[1]))],
   ['GET', /^\/orders\/(\d+)\/receipt$/, (req, m) => getReceipt(req, Number(m[1]))],
   ['GET', /^\/warehouse\/orders$/, (req, _m, q) => listOrdersForWarehouse(req, q.get('status') ?? 'paid')],
 ];
