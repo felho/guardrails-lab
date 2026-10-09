@@ -6,7 +6,7 @@ coding agent, stage by stage.
 
 ## Before the day (homework)
 
-You need Node 24 LTS (npm comes with it), git, and your coding agent (Claude Code or Codex CLI) signed in. No admin rights, nothing global.
+You need Node 24 LTS (npm comes with it), git, and your coding agent (Claude Code or Codex CLI) signed in and working. No admin rights, nothing global.
 
 ```bash
 git clone https://github.com/felho/guardrails-lab.git
@@ -23,15 +23,13 @@ npm run doctor
 |---|---|
 | `npm run stages` | lists the stages of the day and marks where you are |
 | `npm run stage -- <name>` | switches to a stage (e.g. `npm run stage -- 4-guarded`); your current work is committed first, nothing is lost |
-| `npm run agent` | starts Claude Code with your normal login, but without your personal CLAUDE.md, rules and hooks: the only guidance is this repository's |
-| `npm run agent:codex` | starts Codex CLI in a lab-only home with your existing login copied in |
 | `npm run referee` | scores the service with the referee: 23 black-box checks over HTTP |
 | `npm run doctor` | is this laptop ready? |
 | `npm test`, `npm start` | the unit tests, the service on http://localhost:3000 |
 
 Every stage prints its own short note (`docs/STAGE.md`) when you switch to it: what is new, which exercise runs here, what comes next.
 
-No new login is needed: Claude Code uses your normal configuration with only project-level settings loaded (`--setting-sources project,local`); Codex gets a separate home under `~/.cache/guardrails-lab/` with your `auth.json` copied in. Your own subscription is used either way.
+Use your own coding agent (Claude Code, Codex CLI) as you normally do, started inside the repository. Be aware that your personal configuration (a global CLAUDE.md, rules, hooks) also shapes what the agent does here, so your result may differ from the reference; every stage branch holds the reference implementation of the step, so you can always compare.
 
 ## The lab itself
 
@@ -68,4 +66,4 @@ How the branches relate, and how to change things without breaking a stage:
 - **Shared tooling changes go on `stage/0-start`, then merge forward through the whole chain.** Git has no "shared file across branches"; a fix made on one stage stays there. After each merge check `git diff --name-only --diff-filter=U` before adding anything, so no conflict marker gets committed.
 - **Test tooling on `stage/4-guarded` or later, not on `0-start`.** From `4-guarded` on, `npm run check` lints every `.mjs` file in the repository, our scripts included: complexity at most 10 per function, and the security plugin rejects file operations with non-literal paths. On `0-start` there is no lint, so a script that is green there can turn the later stages red, and the agent cannot fix it because the hooks protect `scripts/`.
 - **A new version of Konrad's lab** goes on `main` first, then forward through the same chain. Unlike tooling, it touches the lab's own files, which the agent-built stages have already changed, so expect conflicts, and re-run `npm run check` and `npm run referee` on every stage to confirm the numbers quoted on the slides still hold. If the ticket text changes, `1-bare` and `4-guarded-ticket` must be regenerated with the agent, because they are answers to that exact text. Bring his changes in once before the day and freeze; the slides, the compare links and the stage notes all point at these branches.
-- Agent runs that produce a stage are made headless with an empty configuration directory (`CLAUDE_CONFIG_DIR` pointing at an empty folder), so the only guidance is the repository's. If `CLAUDE.md` makes the agent ask a question, a headless run just ends; put the answers in the prompt.
+- Agent runs that produce a stage are made headless with an empty configuration directory (`CLAUDE_CONFIG_DIR` pointing at an empty folder), so the only guidance is the repository's. Participants use their own agents with their own configuration; that is accepted, the stage branches are the reference. If `CLAUDE.md` makes the agent ask a question, a headless run just ends; put the answers in the prompt.
