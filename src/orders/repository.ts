@@ -1,5 +1,6 @@
 import { db } from '../db.ts';
 import { cents, type Cents } from '../money.ts';
+import type { DiscountCode } from './pricing.ts';
 
 export type OrderItem = {
   sku: string;
@@ -17,6 +18,7 @@ export type Order = {
 
 type OrderRow = { id: number; customer_id: number; status: Order['status']; discount_code: string | null };
 type ItemRow = { sku: string; qty: number; price_cents: number };
+type DiscountCodeRow = { code: string; percent: number; min_order_cents: number; expires_on: string };
 
 export function findOrder(id: number): Order | undefined {
   const row = db.prepare('SELECT id, customer_id, status, discount_code FROM orders WHERE id = ?').get(id) as OrderRow | undefined;
@@ -38,6 +40,23 @@ export function addItem(orderId: number, sku: string, qty: number): void {
 
 export function removeItem(orderId: number, sku: string): void {
   db.prepare('DELETE FROM order_items WHERE order_id = ? AND sku = ?').run(orderId, sku);
+}
+
+/* A discount code, typed in any case. Codes are stored in upper case. */
+export function findDiscountCode(code: string): DiscountCode | undefined {
+  const row = db.prepare('SELECT code, percent, min_order_cents, expires_on FROM discount_codes WHERE code = ?')
+    .get(code.toUpperCase()) as DiscountCodeRow | undefined;
+  if (!row) return undefined;
+  return { code: row.code, percent: row.percent, minOrder: cents(row.min_order_cents), expiresOn: row.expires_on };
+}
+
+/* The discount code applied to an order, if it still exists. */
+export function discountCodeOf(order: Order): DiscountCode | undefined {
+  return order.discountCode === null ? undefined : findDiscountCode(order.discountCode);
+}
+
+export function setDiscountCode(orderId: number, code: string): void {
+  db.prepare('UPDATE orders SET discount_code = ? WHERE id = ?').run(code, orderId);
 }
 
 export function productExists(sku: string): boolean {

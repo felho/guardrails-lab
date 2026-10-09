@@ -1,7 +1,7 @@
 import { findCustomer } from '../customers/repository.ts';
 import { cents, formatCents } from '../money.ts';
 import { priceOrder } from './pricing.ts';
-import { findOrder } from './repository.ts';
+import { discountCodeOf, findOrder } from './repository.ts';
 
 /* A plain-text receipt: who ordered what, and what it costs. */
 export function buildReceipt(orderId: number): string | undefined {
@@ -9,7 +9,7 @@ export function buildReceipt(orderId: number): string | undefined {
   if (!order) return undefined;
   const customer = findCustomer(order.customerId);
   if (!customer) throw new Error(`order ${String(order.id)} has no customer`);
-  const totals = priceOrder(order);
+  const totals = priceOrder(order, discountCodeOf(order));
   return [
     `Order ${String(order.id)} · ${customer.name} <${customer.email}>`,
     ...order.items.map((i) => `${String(i.qty)} × ${i.sku}  ${formatCents(cents(i.unitPrice * i.qty))}`),
