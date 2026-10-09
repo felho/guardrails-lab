@@ -23,15 +23,15 @@ npm run doctor
 |---|---|
 | `npm run stages` | lists the stages of the day and marks where you are |
 | `npm run stage -- <name>` | switches to a stage (e.g. `npm run stage -- 4-guarded`); your current work is committed first, nothing is lost |
-| `npm run agent` | starts Claude Code with a fresh, lab-only configuration (no personal CLAUDE.md, rules, hooks or memory) |
-| `npm run agent:codex` | the same for Codex CLI |
+| `npm run agent` | starts Claude Code with your normal login, but without your personal CLAUDE.md, rules and hooks: the only guidance is this repository's |
+| `npm run agent:codex` | starts Codex CLI in a lab-only home with your existing login copied in |
 | `npm run referee` | scores the service with the referee: 23 black-box checks over HTTP |
 | `npm run doctor` | is this laptop ready? |
 | `npm test`, `npm start` | the unit tests, the service on http://localhost:3000 |
 
 Every stage prints its own short note (`docs/STAGE.md`) when you switch to it: what is new, which exercise runs here, what comes next.
 
-The agent's configuration lives outside the repository, under `~/.cache/guardrails-lab/`, so the only guidance it sees is what the repository holds. The first `npm run agent` may ask you to log in; your subscription is used.
+No new login is needed: Claude Code uses your normal configuration with only project-level settings loaded (`--setting-sources project,local`); Codex gets a separate home under `~/.cache/guardrails-lab/` with your `auth.json` copied in. Your own subscription is used either way.
 
 ## The lab itself
 
