@@ -28,6 +28,8 @@ export function runCheck(args) {
 const PROTECTED = [
   /^scripts(\/|$)/,
   /^\.claude(\/|$)/,
+  /^\.evidence(\/|$)/,
+  /^\.phase-implement$/,
   /^rules(\/|$)/,
   /^rule-tests(\/|$)/,
   /^sgconfig\.ya?ml$/,
@@ -52,6 +54,7 @@ export const SUPPRESSIONS = [
   [/@ts-expect-error/, '@ts-expect-error'],
   [/@ts-nocheck/, '@ts-nocheck'],
   [/secretlint-disable/, 'a secretlint-disable comment'],
+  [/ast-grep-ignore/, 'an ast-grep-ignore comment'],
   [/\bas\s+any\b|<any>/, 'a cast to any'],
 ];
 

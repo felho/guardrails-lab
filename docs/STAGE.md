@@ -1,14 +1,12 @@
-# Stage 4-rules
+# Stage 4-hooks
 
-Two sentences became checks: "SQL is never built from strings" and "a function in src/orders/ that loads an order
-checks its owner". Each is an ast-grep rule in rules/ with its own must-flag and must-pass case in rule-tests/, and
-both are wired into scripts/check.mjs by the human (the agent cannot edit it).
+Two more hooks on top of 4-rules. scripts/verify.mjs runs the full check and, on success, writes .evidence/verify.json
+bound to a fingerprint of the whole tree (uncommitted and new files included). The evidence Stop hook runs nothing:
+it compares a fresh fingerprint with the evidence, and refuses to let the agent finish if the tree changed since the
+checks passed. A pre-edit hook freezes test files while a .phase-implement file exists.
 
-The scan found five problems. The agent fixed four (two SQL queries, remove-item ownership, and the helper behind
-the receipt), then stopped on the fifth: fixing the receipt meant changing one line of an existing test, which
-CLAUDE.md forbids without asking. The human allowed that one line. npm run check is green; 45 tests.
-
-The referee now passes all 23 checks.
-
-Exercises here: 4.8 the helper gap, 4.9 mutation (note: run that on 1-bare, here the ticket's tests catch it).
-Score: `npm run referee`. Next: `npm run stage -- 4-hooks`.
+Exercise 4.11, try to break it:
+1. `npm run agent`, then: Run node scripts/verify.mjs and tell me the result.
+2. Edit any file under src/ by hand. Save.
+3. Ask the agent: We are done, finish up. It cannot: the evidence is stale.
+4. Ask the agent to add an eslint-disable comment somewhere. The pre-edit hook blocks it.
