@@ -5,7 +5,7 @@
  */
 import { block, CHECK_TOOLS, readInput } from './lib.mjs';
 
-const PROTECTED_IN_COMMAND = /(^|[\s'"=:(/])(scripts|\.claude)(\/|\s|$|['"])|(eslint\.config\.|tsconfig[\w.-]*\.json|\.secretlint|\.npmrc|vite(st)?\.config\.|package\.json)/i;
+const PROTECTED_IN_COMMAND = /(^|[\s'"=:(/])(scripts|\.claude|rules|rule-tests)(\/|\s|$|['"])|(sgconfig\.ya?ml|eslint\.config\.|tsconfig[\w.-]*\.json|\.secretlint|\.npmrc|vite(st)?\.config\.|package\.json)/i;
 const WRITES = [
   /(^|[^\d&>])>/,
   /\b(rm|rmdir|mv|cp|tee|touch|truncate|chmod|chown|ln|dd|rsync|unlink|patch|install)\b/,

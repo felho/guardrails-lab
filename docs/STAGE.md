@@ -1,12 +1,14 @@
-# Stage 4-guarded-ticket
+# Stage 4-rules
 
-The ticket, implemented under the hooks of 4-guarded. The agent first asked two questions (is the minimum re-checked
-when the order changes; which time zone); the human answered: re-check every time the order is priced, a code that
-no longer qualifies stays with a discount of 0, but applying a code that does not qualify right now is still refused;
-UTC. npm run check is green; 39 tests.
+Two sentences became checks: "SQL is never built from strings" and "a function in src/orders/ that loads an order
+checks its owner". Each is an ast-grep rule in rules/ with its own must-flag and must-pass case in rule-tests/, and
+both are wired into scripts/check.mjs by the human (the agent cannot edit it).
 
-The referee gives 20/23. The three open items are the ones no general check can see: ownership of remove-item and
-of the receipt, and SQL built from a string in the warehouse list.
+The scan found five problems. The agent fixed four (two SQL queries, remove-item ownership, and the helper behind
+the receipt), then stopped on the fifth: fixing the receipt meant changing one line of an existing test, which
+CLAUDE.md forbids without asking. The human allowed that one line. npm run check is green; 45 tests.
 
-Exercises here: 4.7 one sentence to a check (start your agent, paste the rules prompt; the agent will hand you lines
-for scripts/check.mjs, you add them). Next: `npm run stage -- 4-rules`.
+The referee now passes all 23 checks.
+
+Exercises here: 4.8 the helper gap, 4.9 mutation (note: run that on 1-bare, here the ticket's tests catch it).
+Score: `npm run referee`. Next: `npm run stage -- 4-hooks`.

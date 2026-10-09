@@ -146,7 +146,7 @@ describe('GET /orders/:id with a discount code', () => {
 describe('receipt with a discount code', () => {
   it('totals the same as the order', () => {
     apply(1007, 'SAVE15');
-    expect(buildReceipt(1007)).toContain('Total  €84.83');
+    expect(buildReceipt(1007, { id: 1 })).toContain('Total  €84.83');
   });
 });
 

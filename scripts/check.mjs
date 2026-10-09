@@ -33,7 +33,7 @@ function fileChecks(file) {
   const rel = relative(root, abs);
   const ext = extname(abs);
   if (rel.startsWith('..') || rel.startsWith('node_modules') || !LINTED.has(ext)) return [];
-  return [TYPED.has(ext) ? types() : null, lint([rel])].filter(Boolean);
+  return [TYPED.has(ext) ? types() : null, lint([rel]), TYPED.has(ext) ? run('ast-grep scan', bin('ast-grep'), ['scan', rel]) : null].filter(Boolean);
 }
 
 function allChecks() {
@@ -43,6 +43,8 @@ function allChecks() {
     run('tests', bin('vitest'), ['run']),
     run('npm audit', process.platform === 'win32' ? 'npm.cmd' : 'npm', ['audit', '--audit-level=high']),
     run('secrets', bin('secretlint'), ['--maskSecrets', '**/*']),
+    run('ast-grep rule tests', bin('ast-grep'), ['test', '--skip-snapshot-tests']),
+    run('ast-grep scan', bin('ast-grep'), ['scan']),
   ];
 }
 

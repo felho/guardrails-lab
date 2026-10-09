@@ -1,12 +1,12 @@
-import { findCustomer } from '../customers/repository.ts';
+import { findCustomer, type Customer } from '../customers/repository.ts';
 import { cents, formatCents } from '../money.ts';
 import { priceOrder } from './pricing.ts';
 import { discountCodeOf, findOrder } from './repository.ts';
 
-/* A plain-text receipt: who ordered what, and what it costs. */
-export function buildReceipt(orderId: number): string | undefined {
+/* A plain-text receipt: who ordered what, and what it costs. Only for the customer who owns the order. */
+export function buildReceipt(orderId: number, signedIn: Pick<Customer, 'id'>): string | undefined {
   const order = findOrder(orderId);
-  if (!order) return undefined;
+  if (!order || order.customerId !== signedIn.id) return undefined;
   const customer = findCustomer(order.customerId);
   if (!customer) throw new Error(`order ${String(order.id)} has no customer`);
   const totals = priceOrder(order, discountCodeOf(order));

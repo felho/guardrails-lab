@@ -28,6 +28,9 @@ export function runCheck(args) {
 const PROTECTED = [
   /^scripts(\/|$)/,
   /^\.claude(\/|$)/,
+  /^rules(\/|$)/,
+  /^rule-tests(\/|$)/,
+  /^sgconfig\.ya?ml$/,
   /^eslint\.config\.[cm]?[jt]s$/,
   /^tsconfig[\w.-]*\.json$/,
   /^\.secretlint/,
@@ -53,4 +56,4 @@ export const SUPPRESSIONS = [
 ];
 
 /* The devDependencies that run the checks: removing one turns a check off. */
-export const CHECK_TOOLS = ['eslint', '@eslint/js', 'typescript-eslint', 'eslint-plugin-security', 'globals', 'secretlint', '@secretlint/secretlint-rule-preset-recommend', 'typescript', 'vitest'];
+export const CHECK_TOOLS = ['eslint', '@eslint/js', 'typescript-eslint', 'eslint-plugin-security', 'globals', 'secretlint', '@secretlint/secretlint-rule-preset-recommend', 'typescript', 'vitest', '@ast-grep/cli'];

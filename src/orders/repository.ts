@@ -27,7 +27,7 @@ export function findOrder(id: number): Order | undefined {
 }
 
 export function findOrdersByStatus(status: string): Order[] {
-  const rows = db.prepare(`SELECT id, customer_id, status, discount_code FROM orders WHERE status = '${status}' ORDER BY id`).all() as OrderRow[];
+  const rows = db.prepare('SELECT id, customer_id, status, discount_code FROM orders WHERE status = ? ORDER BY id').all(status) as OrderRow[];
   return rows.map(toOrder);
 }
 

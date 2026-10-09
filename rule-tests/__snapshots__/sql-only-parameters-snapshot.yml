@@ -1,0 +1,29 @@
+id: sql-only-parameters
+snapshots:
+  ? |
+    db.prepare(`SELECT id FROM orders WHERE status = '${status}' ORDER BY id`).all();
+  : labels:
+    - source: '`SELECT id FROM orders WHERE status = ''${status}'' ORDER BY id`'
+      style: primary
+      start: 11
+      end: 73
+    - source: ${status}
+      style: secondary
+      start: 50
+      end: 59
+    - source: prepare
+      style: secondary
+      start: 3
+      end: 10
+    - source: db.prepare
+      style: secondary
+      start: 0
+      end: 10
+    - source: db.prepare(`SELECT id FROM orders WHERE status = '${status}' ORDER BY id`)
+      style: secondary
+      start: 0
+      end: 74
+    - source: (`SELECT id FROM orders WHERE status = '${status}' ORDER BY id`)
+      style: secondary
+      start: 10
+      end: 74

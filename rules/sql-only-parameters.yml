@@ -1,0 +1,49 @@
+id: sql-only-parameters
+language: TypeScript
+severity: error
+message: SQL is built from a string. Keep the SQL text constant and pass values as parameters (`?`).
+note: |
+  Write `db.prepare('... WHERE x = ?').get(value)`, never `${value}` or `+ value` inside the SQL.
+rule:
+  any:
+    # Whatever reaches prepare()/exec() must be constant text.
+    - all:
+        - any:
+            - kind: template_string
+              has:
+                kind: template_substitution
+            - kind: binary_expression
+              has:
+                field: operator
+                regex: ^\+$
+        - inside:
+            kind: arguments
+            inside:
+              kind: call_expression
+              has:
+                field: function
+                kind: member_expression
+                has:
+                  field: property
+                  regex: ^(prepare|exec)$
+    # SQL assembled elsewhere (e.g. into a variable first) is still SQL built from a string.
+    - all:
+        - kind: template_string
+        - has:
+            kind: template_substitution
+        - regex: (?is)\b(select\b.+\bfrom|insert\s+into|update\s+\w+\s+set|delete\s+from)\b
+    - all:
+        - kind: binary_expression
+        - has:
+            field: operator
+            regex: ^\+$
+        - has:
+            stopBy: end
+            kind: string
+            regex: (?is)\b(select\b.+\bfrom|insert\s+into|update\s+\w+\s+set|delete\s+from)\b
+        - not:
+            inside:
+              kind: binary_expression
+              has:
+                field: operator
+                regex: ^\+$

@@ -1,0 +1,7 @@
+ruleDirs:
+  - rules
+testConfigs:
+  - testDir: rule-tests
+ignores:
+  - node_modules/**
+  - .lab/**

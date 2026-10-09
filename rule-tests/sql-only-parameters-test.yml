@@ -1,0 +1,7 @@
+id: sql-only-parameters
+valid:
+  - |
+    db.prepare('SELECT id FROM orders WHERE status = ? ORDER BY id').all(status);
+invalid:
+  - |
+    db.prepare(`SELECT id FROM orders WHERE status = '${status}' ORDER BY id`).all();

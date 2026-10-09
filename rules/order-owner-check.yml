@@ -1,0 +1,29 @@
+id: order-owner-check
+language: TypeScript
+severity: error
+message: This function loads an order but never checks that it belongs to the signed-in customer.
+note: |
+  After `findOrder(...)`, compare the owner, e.g. `if (!order || order.customerId !== customer.id) return notFound('order');`
+files:
+  - src/orders/**
+rule:
+  any:
+    - kind: function_declaration
+    - kind: function_expression
+    - kind: arrow_function
+    - kind: method_definition
+  has:
+    stopBy: end
+    pattern: findOrder($$$)
+  not:
+    has:
+      stopBy: end
+      any:
+        - pattern: $ORDER.customerId !== $CUSTOMER.id
+        - pattern: $ORDER.customerId === $CUSTOMER.id
+        - pattern: $CUSTOMER.id !== $ORDER.customerId
+        - pattern: $CUSTOMER.id === $ORDER.customerId
+        - pattern: $ORDER?.customerId !== $CUSTOMER.id
+        - pattern: $ORDER?.customerId === $CUSTOMER.id
+        - pattern: $CUSTOMER.id !== $ORDER?.customerId
+        - pattern: $CUSTOMER.id === $ORDER?.customerId

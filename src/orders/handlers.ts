@@ -1,5 +1,6 @@
 import _ from 'lodash';
 import { currentCustomer } from '../auth.ts';
+import type { Customer } from '../customers/repository.ts';
 import { badRequest, notFound, type Request, type Response } from '../http.ts';
 import { goodsTotal, priceOrder, todayUtc, whyCodeDoesNotApply } from './pricing.ts';
 import { buildReceipt } from './receipts.ts';
@@ -49,7 +50,7 @@ export function addItemToOrder(req: Request, id: number): Response {
   if (typeof item === 'string') return badRequest(item);
 
   addItem(order.id, item.sku, item.qty);
-  return presentCurrent(id);
+  return presentCurrent(id, customer);
 }
 
 /* The { sku, qty } of a request body, or what is wrong with it. */
@@ -76,13 +77,13 @@ export function applyDiscountCode(req: Request, id: number): Response {
   if (refusal) return badRequest(refusal);
 
   setDiscountCode(order.id, discount.code);
-  return presentCurrent(id);
+  return presentCurrent(id, customer);
 }
 
 /* The order as it is now, after a change. */
-function presentCurrent(id: number): Response {
+function presentCurrent(id: number, customer: Customer): Response {
   const order = findOrder(id);
-  if (!order) return notFound('order');
+  if (!order || order.customerId !== customer.id) return notFound('order');
   return { status: 200, body: present(order) };
 }
 
@@ -91,17 +92,18 @@ export function removeItemFromOrder(req: Request, id: number, sku: string): Resp
   const customer = currentCustomer(req);
   if (!customer) return { status: 401, body: { error: 'sign in first' } };
   const order = findOrder(id);
-  if (!order) return notFound('order');
+  if (!order || order.customerId !== customer.id) return notFound('order');
   if (order.status !== 'open') return { status: 409, body: { error: `the order is already ${order.status}` } };
 
   removeItem(order.id, sku);
-  return presentCurrent(id);
+  return presentCurrent(id, customer);
 }
 
 /* GET /orders/:id/receipt – a plain-text receipt to print */
 export function getReceipt(req: Request, id: number): Response {
-  if (!currentCustomer(req)) return { status: 401, body: { error: 'sign in first' } };
-  const receipt = buildReceipt(id);
+  const customer = currentCustomer(req);
+  if (!customer) return { status: 401, body: { error: 'sign in first' } };
+  const receipt = buildReceipt(id, customer);
   if (!receipt) return notFound('order');
   return { status: 200, body: { receipt } };
 }
