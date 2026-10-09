@@ -1,7 +1,6 @@
-# Stage 0-start
+# Stage 3-guidance
 
-The untouched order service: customers, orders, a bulk discount, shipping, an in-memory database.
-The open ticket is docs/TICKET-142.md. Nothing checks the agent's work yet.
+Same code as 0-start, plus a CLAUDE.md: what done means, what is out of scope, and ask-do-not-guess.
+Read the diff: it is short on purpose. Nothing here is enforced yet; that is the next stage.
 
-Exercises here: 0.4 doctor (`npm run doctor`), 1.1 read the ticket, 3.2 ambiguity and Gherkin (`npm run agent`, paste the prompt).
-Next: `npm run stage -- 1-bare` to read what the agent did with no guardrails.
+Exercises here: 3.5 read the CLAUDE.md. Next: `npm run stage -- 4-guarded`.
