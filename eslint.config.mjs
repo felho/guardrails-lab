@@ -5,7 +5,7 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['node_modules/**'] },
+  { ignores: ['node_modules/**', '.lab/**', '.evidence/**'] },
   { linterOptions: { reportUnusedDisableDirectives: 'error', noInlineConfig: true } },
   js.configs.recommended,
   security.configs.recommended,
