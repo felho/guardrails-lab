@@ -82,9 +82,11 @@ async function referee() {
 function mutate() {
   const file = 'src/orders/pricing.ts';
   const before = readFileSync(file, 'utf8');
-  if (!before.includes('goods >= FREE_SHIPPING_FROM')) { console.error(`${file} does not contain "goods >= FREE_SHIPPING_FROM"; nothing to mutate`); process.exit(1); }
-  writeFileSync(file, before.replace('goods >= FREE_SHIPPING_FROM', 'goods > FREE_SHIPPING_FROM'));
-  console.log(`mutated ${file}: "goods >= FREE_SHIPPING_FROM" is now "goods > FREE_SHIPPING_FROM" (free shipping no longer at exactly 50.00)\nrunning the tests...\n`);
+  const threshold = /(\w+) >= FREE_SHIPPING_FROM/;
+  const hit = before.match(threshold);
+  if (!hit) { console.error(`${file} has no "<goods> >= FREE_SHIPPING_FROM" comparison; nothing to mutate`); process.exit(1); }
+  writeFileSync(file, before.replace(threshold, `${hit[1]} > FREE_SHIPPING_FROM`));
+  console.log(`mutated ${file}: "${hit[0]}" is now "${hit[1]} > FREE_SHIPPING_FROM" (free shipping no longer at exactly 50.00)\nrunning the tests...\n`);
   const status = run('npx', ['vitest', 'run']);
   writeFileSync(file, before);
   console.log(`\n${file} restored.`);
