@@ -5,12 +5,14 @@
  *   npm run stages              list the stages of the day
  *   npm run stage -- 4-guarded  switch to a stage (your current work is committed first, nothing is lost)
  *   npm run referee             score the running service with the referee (downloaded on first use)
- *   npm run agent               start Claude Code with a fresh, lab-only configuration
+ *   npm run agent               start Claude Code with a fresh, lab-only configuration (kept outside the repo)
  *   npm run agent:codex         same for Codex CLI
  *   npm run doctor              is this laptop ready?
  */
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
 
 const STAGES = [
   ['0-start', 'the untouched lab, the ticket, the doctor'],
@@ -79,16 +81,27 @@ async function referee() {
   process.exit(run('node', ['.lab/referee.mjs', '--start', 'npm start', ...process.argv.slice(3)]));
 }
 
+/* Agent homes live outside the repository, so no credential can ever be committed. */
+const AGENT_HOME = join(homedir(), '.cache', 'guardrails-lab');
+
+function ensureAgentHomes() {
+  process.chdir(homedir());
+  mkdirSync('.cache/guardrails-lab/claude-config', { recursive: true });
+  mkdirSync('.cache/guardrails-lab/codex-home', { recursive: true });
+  process.chdir(root);
+}
+
 function agent(which) {
+  ensureAgentHomes();
+  const extra = process.argv.slice(4);
   if (which === 'codex') {
-    mkdirSync('.lab/codex-home', { recursive: true });
-    console.log('Codex with a lab-only home (.lab/codex-home). First time: it will ask you to log in.');
-    process.exit(run('codex', process.argv.slice(4), { CODEX_HOME: `${root}/.lab/codex-home` }));
+    const home = join(AGENT_HOME, 'codex-home');
+    console.log(`Codex with a lab-only home (${home}). First time: it will ask you to log in.`);
+    process.exit(run('codex', extra, { CODEX_HOME: home }));
   }
-  mkdirSync('.lab/claude-config', { recursive: true });
-  if (!existsSync('.lab/claude-config/settings.json')) writeFileSync('.lab/claude-config/settings.json', '{}\n');
-  console.log('Claude Code with a lab-only configuration (.lab/claude-config): no personal CLAUDE.md, rules, hooks or memory. First time it may ask you to log in.');
-  process.exit(run('claude', process.argv.slice(4), { CLAUDE_CONFIG_DIR: `${root}/.lab/claude-config` }));
+  const config = join(AGENT_HOME, 'claude-config');
+  console.log(`Claude Code with a lab-only configuration (${config}): no personal CLAUDE.md, rules, hooks or memory. First time it may ask you to log in.`);
+  process.exit(run('claude', extra, { CLAUDE_CONFIG_DIR: config }));
 }
 
 const [, , command, arg] = process.argv;
