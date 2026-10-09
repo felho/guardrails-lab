@@ -5,14 +5,10 @@
  *   npm run stages              list the stages of the day
  *   npm run stage -- 4-guarded  switch to a stage (your current work is committed first, nothing is lost)
  *   npm run referee             score the running service with the referee (downloaded on first use)
- *   npm run agent               start Claude Code with your normal login but without your personal CLAUDE.md, rules and hooks
- *   npm run agent:codex         start Codex CLI in a lab-only home, with your existing login copied in
  *   npm run doctor              is this laptop ready?
  */
 import { spawnSync } from 'node:child_process';
-import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 
 const STAGES = [
   ['0-start', 'the untouched lab, the ticket, the doctor'],
@@ -81,37 +77,8 @@ async function referee() {
   process.exit(run('node', ['.lab/referee.mjs', '--start', 'npm start', ...process.argv.slice(3)]));
 }
 
-/*
- * Claude Code: the normal configuration directory (so the login works), but only project-level
- * settings and CLAUDE.md files are loaded; the user's own CLAUDE.md, rules and hooks stay out.
- * Codex CLI has no such switch, so it gets a lab-only home outside the repository, with the
- * existing login copied in so nobody has to sign in again.
- */
-const CODEX_HOME = join(homedir(), '.cache', 'guardrails-lab', 'codex-home');
-
-function ensureCodexHome() {
-  process.chdir(homedir());
-  mkdirSync('.cache/guardrails-lab/codex-home', { recursive: true });
-  if (!existsSync('.cache/guardrails-lab/codex-home/auth.json') && existsSync('.codex/auth.json')) {
-    copyFileSync('.codex/auth.json', '.cache/guardrails-lab/codex-home/auth.json');
-  }
-  process.chdir(root);
-}
-
-function agent(which) {
-  const extra = process.argv.slice(4);
-  if (which === 'codex') {
-    ensureCodexHome();
-    console.log(`Codex with a lab-only home (${CODEX_HOME}); your existing login was copied in.`);
-    process.exit(run('codex', extra, { CODEX_HOME }));
-  }
-  console.log('Claude Code with your normal login; your personal CLAUDE.md, rules and hooks are not loaded, only this repository\'s.');
-  process.exit(run('claude', ['--setting-sources', 'project,local', ...extra]));
-}
-
 const [, , command, arg] = process.argv;
 if (command === 'stages') stages();
 else if (command === 'stage') stage(arg);
 else if (command === 'referee') await referee();
-else if (command === 'agent') agent(arg);
-else { console.error('usage: lab.mjs stages | stage <name> | referee | agent claude|codex'); process.exit(1); }
+else { console.error('usage: lab.mjs stages | stage <name> | referee'); process.exit(1); }
