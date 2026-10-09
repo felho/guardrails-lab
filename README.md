@@ -35,13 +35,27 @@ The agent's configuration lives outside the repository, under `~/.cache/guardrai
 
 ## The lab itself
 
+A small order service with an HTTP API and no user interface (the `messy` and `nice` branches add a web page). `npm start` serves it on http://localhost:3000. The database is in memory and starts from the same seed every time: three customers (Anna, Bence, Csilla), five products (mug, tee, cap, hoodie, socks), seven orders, three discount codes. Signing in is a header: `X-Customer-Id: 1` means you are Anna.
+
+| Request | What it does |
+|---|---|
+| `GET /orders/1002` | the order, priced: items, subtotal, bulk discount, shipping, total |
+| `POST /orders/1002/items` `{"sku":"CAP","qty":1}` | adds an item to an open order |
+| `DELETE /orders/1002/items/MUG` | removes an item |
+| `GET /orders/1002/receipt` | a plain-text receipt with the customer's name and email |
+| `GET /warehouse/orders?status=open` | the packing team's list, with an `X-Staff-Token` header |
+| `POST /orders/1002/discount` `{"code":"SAVE15"}` | applies a discount code: this is the ticket, and it exists only on the stages where the ticket is done |
+
+Pricing: ten or more of one product gives 5% off that line, five or more socks 10%; shipping is 4.90 and free from 50.00 of goods; a discount code takes its percentage off the goods after the bulk discount, and free shipping is decided after that. Every amount is a whole number of cents, rounded half up (`docs/money.md`).
+
 ```bash
+npm start
 curl -H 'X-Customer-Id: 1' localhost:3000/orders/1002
 curl -H 'X-Customer-Id: 1' -H 'Content-Type: application/json' \
      -d '{"sku":"CAP","qty":1}' localhost:3000/orders/1002/items
 ```
 
-The data is in memory and starts from the same seed every time the server starts. The money rules are in `docs/money.md`.
+The lab is small on purpose, 459 lines at the start, so that a participant can take it in within minutes and the planted defects (missing ownership checks, SQL built from strings, two crashes) can be found by reading.
 
 The lab is derived from Konrad's guardrails lab (aicode.page/lab); the referee is his and stays outside the repository on purpose.
 
