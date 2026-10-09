@@ -36,29 +36,34 @@ function stages() {
   console.log('\nswitch with: npm run stage -- <name>');
 }
 
+/* Where a stage lives: origin first, then local, under stage/ or as a plain branch. */
+function resolveRef(name) {
+  const candidates = [`origin/stage/${name}`, `stage/${name}`, `origin/${name}`, name];
+  return candidates.find((ref) => git('rev-parse', '--verify', '--quiet', ref).status === 0) ?? null;
+}
+
+/* Uncommitted work is committed on the current branch before switching, so nothing is lost. */
+function commitWorkInProgress(next) {
+  if (!git('status', '--porcelain').stdout.trim()) return;
+  const current = git('branch', '--show-current').stdout.trim() || 'detached';
+  git('add', '-A');
+  git('commit', '-q', '--no-verify', '-m', `WIP on ${current} before switching to ${next}`);
+  console.log(`your changes were committed on ${current}, nothing is lost`);
+}
+
+function checkout(name, ref) {
+  const haveLocal = git('rev-parse', '--verify', '--quiet', name).status === 0;
+  const r = haveLocal ? git('checkout', '-q', name) : git('checkout', '-q', '-B', name, ref);
+  if (r.status !== 0) { console.error(r.stderr); process.exit(1); }
+  console.log(haveLocal ? `back on your branch ${name} (your earlier work on this stage)` : `on ${name} (fresh from ${ref})`);
+}
+
 function stage(name) {
   if (!name) { stages(); process.exit(1); }
-  const ref = git('rev-parse', '--verify', '--quiet', `origin/stage/${name}`).status === 0 ? `origin/stage/${name}`
-    : git('rev-parse', '--verify', '--quiet', `stage/${name}`).status === 0 ? `stage/${name}`
-    : git('rev-parse', '--verify', '--quiet', `origin/${name}`).status === 0 ? `origin/${name}`
-    : git('rev-parse', '--verify', '--quiet', name).status === 0 ? name : null;
+  const ref = resolveRef(name);
   if (!ref) { console.error(`no such stage: ${name}`); stages(); process.exit(1); }
-
-  if (git('status', '--porcelain').stdout.trim()) {
-    const current = git('branch', '--show-current').stdout.trim() || 'detached';
-    git('add', '-A');
-    git('commit', '-q', '--no-verify', '-m', `WIP on ${current} before switching to ${name}`);
-    console.log(`your changes were committed on ${current}, nothing is lost`);
-  }
-  if (git('rev-parse', '--verify', '--quiet', name).status === 0 && git('branch', '--show-current').stdout.trim() !== name) {
-    const r = git('checkout', '-q', name);
-    if (r.status !== 0) { console.error(r.stderr); process.exit(1); }
-    console.log(`back on your branch ${name} (your earlier work on this stage)`);
-  } else {
-    const r = git('checkout', '-q', '-B', name, ref);
-    if (r.status !== 0) { console.error(r.stderr); process.exit(1); }
-    console.log(`on ${name} (fresh from ${ref})`);
-  }
+  commitWorkInProgress(name);
+  checkout(name, ref);
   if (run('npm', ['ci', '--no-audit', '--no-fund', '--loglevel=error']) !== 0) process.exit(1);
   if (existsSync('docs/STAGE.md')) console.log(`\n${readFileSync('docs/STAGE.md', 'utf8')}`);
 }
