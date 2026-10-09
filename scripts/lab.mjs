@@ -5,6 +5,7 @@
  *   npm run stages              list the stages of the day
  *   npm run stage -- 4-guarded  switch to a stage (your current work is committed first, nothing is lost)
  *   npm run referee             score the running service with the referee (downloaded on first use)
+ *   npm run mutate              a colleague's one-character change at the free-shipping threshold: do the tests notice?
  *   npm run doctor              is this laptop ready?
  */
 import { spawnSync } from 'node:child_process';
@@ -77,8 +78,22 @@ async function referee() {
   process.exit(run('node', ['.lab/referee.mjs', '--start', 'npm start', ...process.argv.slice(3)]));
 }
 
+/* The one-character mutation of exercise 4.9: >= becomes > at the free-shipping threshold, run the tests, restore. */
+function mutate() {
+  const file = 'src/orders/pricing.ts';
+  const before = readFileSync(file, 'utf8');
+  if (!before.includes('goods >= FREE_SHIPPING_FROM')) { console.error(`${file} does not contain "goods >= FREE_SHIPPING_FROM"; nothing to mutate`); process.exit(1); }
+  writeFileSync(file, before.replace('goods >= FREE_SHIPPING_FROM', 'goods > FREE_SHIPPING_FROM'));
+  console.log(`mutated ${file}: "goods >= FREE_SHIPPING_FROM" is now "goods > FREE_SHIPPING_FROM" (free shipping no longer at exactly 50.00)\nrunning the tests...\n`);
+  const status = run('npx', ['vitest', 'run']);
+  writeFileSync(file, before);
+  console.log(`\n${file} restored.`);
+  console.log(status === 0 ? 'Every test stayed green: the tests did not notice the change.' : 'A test failed: the tests noticed the change.');
+}
+
 const [, , command, arg] = process.argv;
 if (command === 'stages') stages();
 else if (command === 'stage') stage(arg);
 else if (command === 'referee') await referee();
-else { console.error('usage: lab.mjs stages | stage <name> | referee'); process.exit(1); }
+else if (command === 'mutate') mutate();
+else { console.error('usage: lab.mjs stages | stage <name> | referee | mutate'); process.exit(1); }

@@ -24,6 +24,7 @@ npm run doctor
 | `npm run stages` | lists the stages of the day and marks where you are |
 | `npm run stage -- <name>` | switches to a stage (e.g. `npm run stage -- 4-guarded`); your current work is committed first, nothing is lost |
 | `npm run referee` | scores the service with the referee: 23 black-box checks over HTTP |
+| `npm run mutate` | a colleague's one-character change at the free-shipping threshold, tests run, file restored: do the tests notice? |
 | `npm run doctor` | is this laptop ready? |
 | `npm test`, `npm start` | the unit tests, the service on http://localhost:3000 |
 
