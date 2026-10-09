@@ -12,7 +12,12 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "doctor": "node scripts/doctor.mjs",
-    "check": "node scripts/check.mjs"
+    "check": "node scripts/check.mjs",
+    "stages": "node scripts/lab.mjs stages",
+    "stage": "node scripts/lab.mjs stage",
+    "referee": "node scripts/lab.mjs referee",
+    "agent": "node scripts/lab.mjs agent claude",
+    "agent:codex": "node scripts/lab.mjs agent codex"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
