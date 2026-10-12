@@ -19,6 +19,7 @@
     "restore": "node scripts/lab.mjs restore"
   },
   "devDependencies": {
+    "@ast-grep/cli": "0.45.3",
     "@types/lodash": "^4.17.20",
     "@types/node": "^22.19.0",
     "typescript": "~6.0.3",
