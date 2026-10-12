@@ -69,6 +69,7 @@ function stage(name) {
   if (!name) { stages(); process.exit(1); }
   const ref = resolveRef(name);
   if (!ref) { console.error(`no such stage: ${name}`); stages(); process.exit(1); }
+  undoMutationIfLeft();
   commitWorkInProgress(name);
   checkout(name, ref);
   if (run('npm', ['ci', '--no-audit', '--no-fund', '--loglevel=error']) !== 0) process.exit(1);
@@ -101,6 +102,17 @@ function mutate() {
 }
 
 /* The exact reverse of mutate(), so it works whatever git state the file is in (a WIP commit may contain the mutation). */
+/* A switch must not save the colleague's mutation as the participant's own work: undo it first, and say so. */
+function undoMutationIfLeft() {
+  if (!existsSync(PRICING)) return;
+  const before = readFileSync(PRICING, 'utf8');
+  const mutated = /(\w+) > FREE_SHIPPING_FROM/;
+  const hit = before.match(mutated);
+  if (!hit) return;
+  writeFileSync(PRICING, before.replace(mutated, `${hit[1]} >= FREE_SHIPPING_FROM`));
+  console.log(`the colleague's mutation was still in ${PRICING}; restored it before switching (npm run restore does the same)`);
+}
+
 function restore() {
   const before = readFileSync(PRICING, 'utf8');
   const mutated = /(\w+) > FREE_SHIPPING_FROM/;
