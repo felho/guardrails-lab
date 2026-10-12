@@ -15,6 +15,8 @@ npm ci
 npm run doctor
 ```
 
+`npm ci` warns about "1 high severity vulnerability" and about install scripts not covered by allowScripts. Both are expected: the vulnerable package is part of the lab (one of the planted defects). Do not run `npm audit fix`; it would remove a defect the day builds on.
+
 `doctor` prints one line per check and ends with "All green. You are ready." Send a screenshot of its output to the organisers. If something is red, tell us before the day.
 
 ## On the day: every step is an npm script
