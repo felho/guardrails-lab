@@ -16,6 +16,7 @@ check('git', () => run('git', ['--version']));
 check('node_modules installed', () => { if (!existsSync('node_modules')) throw new Error('run: npm ci'); return 'ok'; });
 check('typecheck', () => { run('npx', ['tsc', '--noEmit']); return 'ok'; });
 check('tests', () => run('npx', ['vitest', 'run']).match(/Tests\s+(.*)/)?.[1] ?? 'ok');
+check('ast-grep (npm package)', () => run('npx', ['ast-grep', '--version']));
 check('coding agent (claude or codex)', () => { for (const c of ['claude', 'codex']) { const r = spawnSync(c, ['--version'], { encoding: 'utf8', shell: process.platform === 'win32' }); if (r.status === 0) return `${c} ${r.stdout.trim()}`; } throw new Error('neither claude nor codex on PATH'); });
 
 let red = 0;
