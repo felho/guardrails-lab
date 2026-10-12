@@ -6,7 +6,7 @@ coding agent, stage by stage.
 
 ## Before the day (homework)
 
-You need Node 24 LTS (npm comes with it), git, and your coding agent (Claude Code or Codex CLI) signed in and working. No admin rights, nothing global.
+You need Node 24 LTS (22.18 or later works; npm comes with it), git, and your coding agent (Claude Code or Codex CLI) signed in and working. No admin rights, nothing global.
 
 ```bash
 git clone https://github.com/felho/guardrails-lab.git
