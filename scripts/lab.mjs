@@ -49,7 +49,7 @@ function commitWorkInProgress(next) {
   const current = git('branch', '--show-current').stdout.trim() || 'detached';
   git('add', '-A');
   git('commit', '-q', '--no-verify', '-m', `WIP on ${current} before switching to ${next}`);
-  console.log(`your changes were committed on ${current}, nothing is lost`);
+  console.log(`your changes were committed on ${current}, nothing is lost (return with: npm run stage -- ${current.replace(/^stage\//, '')})`);
 }
 
 /* A participant's own branch for a stage: the one npm run stage created, or the clone's default stage/<name>. */
@@ -61,7 +61,8 @@ function checkout(name, ref) {
   const local = localBranch(name);
   const r = local ? git('checkout', '-q', local) : git('checkout', '-q', '-B', name, ref);
   if (r.status !== 0) { console.error(r.stderr); process.exit(1); }
-  console.log(local ? `back on your branch ${local} (your earlier work on this stage)` : `on ${name} (fresh from ${ref})`);
+  const ownWork = local && git('rev-list', '--count', `${ref}..${local}`).stdout.trim() !== '0';
+  console.log(local ? `back on your branch ${local}${ownWork ? ' (with your saved work)' : ''}` : `on ${name} (fresh from ${ref})`);
 }
 
 function stage(name) {
