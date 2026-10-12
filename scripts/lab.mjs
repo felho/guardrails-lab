@@ -49,14 +49,20 @@ function commitWorkInProgress(next) {
   const current = git('branch', '--show-current').stdout.trim() || 'detached';
   git('add', '-A');
   git('commit', '-q', '--no-verify', '-m', `WIP on ${current} before switching to ${next}`);
-  console.log(`your changes were committed on ${current}, nothing is lost`);
+  console.log(`your changes were committed on ${current}, nothing is lost (return with: npm run stage -- ${current.replace(/^stage\//, '')})`);
+}
+
+/* A participant's own branch for a stage: the one npm run stage created, or the clone's default stage/<name>. */
+function localBranch(name) {
+  return [name, `stage/${name}`].find((b) => git('rev-parse', '--verify', '--quiet', `refs/heads/${b}`).status === 0) ?? null;
 }
 
 function checkout(name, ref) {
-  const haveLocal = git('rev-parse', '--verify', '--quiet', name).status === 0;
-  const r = haveLocal ? git('checkout', '-q', name) : git('checkout', '-q', '-B', name, ref);
+  const local = localBranch(name);
+  const r = local ? git('checkout', '-q', local) : git('checkout', '-q', '-B', name, ref);
   if (r.status !== 0) { console.error(r.stderr); process.exit(1); }
-  console.log(haveLocal ? `back on your branch ${name} (your earlier work on this stage)` : `on ${name} (fresh from ${ref})`);
+  const ownWork = local && git('rev-list', '--count', `${ref}..${local}`).stdout.trim() !== '0';
+  console.log(local ? `back on your branch ${local}${ownWork ? ' (with your saved work)' : ''}` : `on ${name} (fresh from ${ref})`);
 }
 
 function stage(name) {
@@ -94,10 +100,14 @@ function mutate() {
   console.log('\nnow: npm test        do the tests notice?\nthen: npm run restore');
 }
 
+/* The exact reverse of mutate(), so it works whatever git state the file is in (a WIP commit may contain the mutation). */
 function restore() {
-  const r = git('checkout', '--', PRICING);
-  if (r.status !== 0) { console.error(r.stderr); process.exit(1); }
-  console.log(`${PRICING} restored.`);
+  const before = readFileSync(PRICING, 'utf8');
+  const mutated = /(\w+) > FREE_SHIPPING_FROM/;
+  const hit = before.match(mutated);
+  if (!hit) { console.log(`${PRICING} is not mutated; nothing to restore.`); return; }
+  writeFileSync(PRICING, before.replace(mutated, `${hit[1]} >= FREE_SHIPPING_FROM`));
+  console.log(`${PRICING} restored: "${hit[0]}" is again "${hit[1]} >= FREE_SHIPPING_FROM".`);
   run('git', ['status', '--short']);
 }
 
@@ -123,8 +133,7 @@ function lockRules() {
   if (!b.includes('|rules|rule-tests')) { b = b.replace('(scripts|\\.claude)', '(scripts|\\.claude|rules|rule-tests)').replace('(eslint\\.config\\.|', '(sgconfig\\.ya?ml|eslint\\.config\\.|'); changed++; }
   writeFileSync(bash, b);
   if (!changed) { console.log('the rules are already locked'); return; }
-  console.log('locked: the hooks now protect rules/, rule-tests/ and sgconfig.yml, and treat @ast-grep/cli as a check tool.\nTry it: ask your agent to loosen a rule, and watch the hook refuse.\n');
-  run('git', ['status', '--short']);
+  console.log('locked: the hooks now protect rules/, rule-tests/ and sgconfig.yml, and treat @ast-grep/cli as a check tool.\n(this edited scripts/hooks/lib.mjs and scripts/hooks/pre-bash.mjs; that is expected)\nTry it: ask your agent to loosen a rule, and watch the hook refuse.');
 }
 
 const [, , command, arg] = process.argv;
