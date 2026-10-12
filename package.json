@@ -16,7 +16,8 @@
     "stage": "node scripts/lab.mjs stage",
     "referee": "node scripts/lab.mjs referee",
     "mutate": "node scripts/lab.mjs mutate",
-    "restore": "node scripts/lab.mjs restore"
+    "restore": "node scripts/lab.mjs restore",
+    "lock-rules": "node scripts/lab.mjs lock-rules"
   },
   "devDependencies": {
     "@ast-grep/cli": "0.45.3",
