@@ -129,8 +129,7 @@ function lockRules() {
   if (!b.includes('|rules|rule-tests')) { b = b.replace('(scripts|\\.claude)', '(scripts|\\.claude|rules|rule-tests)').replace('(eslint\\.config\\.|', '(sgconfig\\.ya?ml|eslint\\.config\\.|'); changed++; }
   writeFileSync(bash, b);
   if (!changed) { console.log('the rules are already locked'); return; }
-  console.log('locked: the hooks now protect rules/, rule-tests/ and sgconfig.yml, and treat @ast-grep/cli as a check tool.\nTry it: ask your agent to loosen a rule, and watch the hook refuse.\n');
-  run('git', ['status', '--short']);
+  console.log('locked: the hooks now protect rules/, rule-tests/ and sgconfig.yml, and treat @ast-grep/cli as a check tool.\n(this edited scripts/hooks/lib.mjs and scripts/hooks/pre-bash.mjs; that is expected)\nTry it: ask your agent to loosen a rule, and watch the hook refuse.');
 }
 
 const [, , command, arg] = process.argv;
