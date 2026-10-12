@@ -1,5 +1,5 @@
 /*
- * Shared helpers for the Claude Code hooks in .claude/settings.json.
+ * Shared helpers for the Claude Code hooks in .claude/settings.json and the Codex hooks in .codex/hooks.json.
  */
 import { spawnSync } from 'node:child_process';
 import { dirname, isAbsolute, relative, resolve } from 'node:path';
@@ -28,6 +28,7 @@ export function runCheck(args) {
 const PROTECTED = [
   /^scripts(\/|$)/,
   /^\.claude(\/|$)/,
+  /^\.codex(\/|$)/,
   /^\.evidence(\/|$)/,
   /^\.phase-implement$/,
   /^rules(\/|$)/,

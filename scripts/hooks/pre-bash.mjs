@@ -5,7 +5,7 @@
  */
 import { block, CHECK_TOOLS, readInput } from './lib.mjs';
 
-const PROTECTED_IN_COMMAND = /(^|[\s'"=:(/])(scripts|\.claude|rules|rule-tests|\.evidence)(\/|\s|$|['"])|(\.phase-implement|sgconfig\.ya?ml|eslint\.config\.|tsconfig[\w.-]*\.json|\.secretlint|\.npmrc|vite(st)?\.config\.|package\.json)/i;
+const PROTECTED_IN_COMMAND = /(^|[\s'"=:(/])(scripts|\.claude|rules|rule-tests|\.evidence)(\/|\s|$|['"])|(\.phase-implement|sgconfig\.ya?ml|eslint\.config\.|tsconfig[\w.-]*\.json|\.secretlint|\.npmrc|vite(st)?\.config\.|package\.json|\.codex\/)/i;
 const WRITES = [
   /(^|[^\d&>])>/,
   /\b(rm|rmdir|mv|cp|tee|touch|truncate|chmod|chown|ln|dd|rsync|unlink|patch|install)\b/,
@@ -30,5 +30,5 @@ if (uninstall && CHECK_TOOLS.some((t) => uninstall[2].split(/\s+/).includes(t)))
   block('Blocked: uninstalling a check tool turns a check off.');
 }
 if (PROTECTED_IN_COMMAND.test(cmd) && WRITES.some((re) => re.test(cmd))) {
-  block("Blocked: this command looks like it modifies the checks' configuration, scripts/ or .claude/. Fix the code instead; if a check is wrong, stop and tell the user.");
+  block("Blocked: this command looks like it modifies the checks' configuration, scripts/, .claude/ or .codex/. Fix the code instead; if a check is wrong, stop and tell the user.");
 }
