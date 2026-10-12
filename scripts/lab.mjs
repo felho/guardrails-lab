@@ -52,11 +52,16 @@ function commitWorkInProgress(next) {
   console.log(`your changes were committed on ${current}, nothing is lost`);
 }
 
+/* A participant's own branch for a stage: the one npm run stage created, or the clone's default stage/<name>. */
+function localBranch(name) {
+  return [name, `stage/${name}`].find((b) => git('rev-parse', '--verify', '--quiet', `refs/heads/${b}`).status === 0) ?? null;
+}
+
 function checkout(name, ref) {
-  const haveLocal = git('rev-parse', '--verify', '--quiet', name).status === 0;
-  const r = haveLocal ? git('checkout', '-q', name) : git('checkout', '-q', '-B', name, ref);
+  const local = localBranch(name);
+  const r = local ? git('checkout', '-q', local) : git('checkout', '-q', '-B', name, ref);
   if (r.status !== 0) { console.error(r.stderr); process.exit(1); }
-  console.log(haveLocal ? `back on your branch ${name} (your earlier work on this stage)` : `on ${name} (fresh from ${ref})`);
+  console.log(local ? `back on your branch ${local} (your earlier work on this stage)` : `on ${name} (fresh from ${ref})`);
 }
 
 function stage(name) {
