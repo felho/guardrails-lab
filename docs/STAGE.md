@@ -8,5 +8,5 @@ UTC. npm run check is green; 39 tests.
 The referee gives 20/23. The three open items are the ones no general check can see: ownership of remove-item and
 of the receipt, and SQL built from a string in the warehouse list.
 
-Exercises here: 4.7 one sentence to a check (start your agent, paste the rules prompt; the agent will hand you lines
+Exercises here: "A sentence becomes a check" (start your agent, paste the rules prompt; the agent will hand you lines
 for scripts/check.mjs, you add them). Next: `npm run stage -- 4-rules`.
