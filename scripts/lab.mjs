@@ -100,10 +100,14 @@ function mutate() {
   console.log('\nnow: npm test        do the tests notice?\nthen: npm run restore');
 }
 
+/* The exact reverse of mutate(), so it works whatever git state the file is in (a WIP commit may contain the mutation). */
 function restore() {
-  const r = git('checkout', '--', PRICING);
-  if (r.status !== 0) { console.error(r.stderr); process.exit(1); }
-  console.log(`${PRICING} restored.`);
+  const before = readFileSync(PRICING, 'utf8');
+  const mutated = /(\w+) > FREE_SHIPPING_FROM/;
+  const hit = before.match(mutated);
+  if (!hit) { console.log(`${PRICING} is not mutated; nothing to restore.`); return; }
+  writeFileSync(PRICING, before.replace(mutated, `${hit[1]} >= FREE_SHIPPING_FROM`));
+  console.log(`${PRICING} restored: "${hit[0]}" is again "${hit[1]} >= FREE_SHIPPING_FROM".`);
   run('git', ['status', '--short']);
 }
 
