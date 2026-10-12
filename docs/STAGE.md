@@ -10,5 +10,5 @@ CLAUDE.md forbids without asking. The human allowed that one line. npm run check
 
 The referee now passes all 23 checks.
 
-Exercises here: 4.8 the helper gap, 4.9 mutation (note: run that on 1-bare, here the ticket's tests catch it).
+Exercises here: "getReceipt never calls findOrder" (the helper gap), "Testing the tests" (note: run the mutation on 1-bare, here the ticket's tests catch it).
 Score: `npm run referee`. Next: `npm run stage -- 4-hooks`.
