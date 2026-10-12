@@ -34,6 +34,8 @@ npm run doctor
 
 Every stage prints its own short note (`docs/STAGE.md`) when you switch to it: what is new, which exercise runs here, what comes next.
 
+Start your agent in the repository root, and start a new session after every `npm run stage` (guidance files are read at session start). From the `4-guarded` stage on, the hooks are wired for both agents: Claude Code reads `.claude/settings.json`, Codex CLI reads `.codex/hooks.json`. Codex skips new hooks until you trust them once: type `/hooks` in Codex and approve them.
+
 Use your own coding agent (Claude Code, Codex CLI) as you normally do, started inside the repository. Be aware that your personal configuration (a global CLAUDE.md, rules, hooks) also shapes what the agent does here, so your result may differ from the reference; every stage branch holds the reference implementation of the step, so you can always compare.
 
 ## The lab itself

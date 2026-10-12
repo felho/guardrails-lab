@@ -130,7 +130,7 @@ function lockRules() {
   if (!l.includes('ast-grep-ignore')) { l = l.replace("  [/secretlint-disable/, 'a secretlint-disable comment'],\n", "  [/secretlint-disable/, 'a secretlint-disable comment'],\n  [/ast-grep-ignore/, 'an ast-grep-ignore comment'],\n"); changed++; }
   writeFileSync(lib, l);
   let b = readFileSync(bash, 'utf8');
-  if (!b.includes('|rules|rule-tests')) { b = b.replace('(scripts|\\.claude)', '(scripts|\\.claude|rules|rule-tests)').replace('(eslint\\.config\\.|', '(sgconfig\\.ya?ml|eslint\\.config\\.|'); changed++; }
+  if (!b.includes('|rules|rule-tests')) { b = b.replace('(scripts|\\.claude', '(scripts|\\.claude|rules|rule-tests').replace('(eslint\\.config\\.|', '(sgconfig\\.ya?ml|eslint\\.config\\.|'); changed++; }
   writeFileSync(bash, b);
   if (!changed) { console.log('the rules are already locked'); return; }
   console.log('locked: the hooks now protect rules/, rule-tests/ and sgconfig.yml, and treat @ast-grep/cli as a check tool.\n(this edited scripts/hooks/lib.mjs and scripts/hooks/pre-bash.mjs; that is expected)\nTry it: ask your agent to loosen a rule, and watch the hook refuse.');
