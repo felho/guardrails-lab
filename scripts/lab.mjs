@@ -7,6 +7,7 @@
  *   npm run referee             score the running service with the referee (downloaded on first use)
  *   npm run mutate              a colleague's one-character change at the free-shipping threshold (then: npm test)
  *   npm run restore             undo the mutation
+ *   npm run lock-rules          after you wrote your own rules: the hooks protect rules/, rule-tests/ and sgconfig.yml
  *   npm run doctor              is this laptop ready?
  */
 import { spawnSync } from 'node:child_process';
@@ -100,10 +101,37 @@ function restore() {
   run('git', ['status', '--short']);
 }
 
+/*
+ * After the rules exercise: the agent wrote rules/ and rule-tests/; from now on the hooks must treat them like the
+ * check's own configuration, so no agent can loosen a rule to make code pass. Idempotent; only works where the
+ * hooks exist (from the 4-guarded stage on).
+ */
+function lockRules() {
+  const lib = 'scripts/hooks/lib.mjs';
+  const bash = 'scripts/hooks/pre-bash.mjs';
+  if (!existsSync(lib) || !existsSync(bash)) { console.error('no hooks on this stage (scripts/hooks/lib.mjs, pre-bash.mjs); switch to 4-guarded or later'); process.exit(1); }
+  let changed = 0;
+  let l = readFileSync(lib, 'utf8');
+  if (!l.includes('/^rules(')) {
+    l = l.replace("  /^\\.claude(\\/|$)/,\n", "  /^\\.claude(\\/|$)/,\n  /^rules(\\/|$)/,\n  /^rule-tests(\\/|$)/,\n  /^sgconfig\\.ya?ml$/,\n");
+    changed++;
+  }
+  if (!l.includes("'@ast-grep/cli'")) { l = l.replace("'vitest']", "'vitest', '@ast-grep/cli']"); changed++; }
+  if (!l.includes('ast-grep-ignore')) { l = l.replace("  [/secretlint-disable/, 'a secretlint-disable comment'],\n", "  [/secretlint-disable/, 'a secretlint-disable comment'],\n  [/ast-grep-ignore/, 'an ast-grep-ignore comment'],\n"); changed++; }
+  writeFileSync(lib, l);
+  let b = readFileSync(bash, 'utf8');
+  if (!b.includes('|rules|rule-tests')) { b = b.replace('(scripts|\\.claude)', '(scripts|\\.claude|rules|rule-tests)').replace('(eslint\\.config\\.|', '(sgconfig\\.ya?ml|eslint\\.config\\.|'); changed++; }
+  writeFileSync(bash, b);
+  if (!changed) { console.log('the rules are already locked'); return; }
+  console.log('locked: the hooks now protect rules/, rule-tests/ and sgconfig.yml, and treat @ast-grep/cli as a check tool.\nTry it: ask your agent to loosen a rule, and watch the hook refuse.\n');
+  run('git', ['status', '--short']);
+}
+
 const [, , command, arg] = process.argv;
 if (command === 'stages') stages();
 else if (command === 'stage') stage(arg);
 else if (command === 'referee') await referee();
 else if (command === 'mutate') mutate();
 else if (command === 'restore') restore();
-else { console.error('usage: lab.mjs stages | stage <name> | referee | mutate | restore'); process.exit(1); }
+else if (command === 'lock-rules') lockRules();
+else { console.error('usage: lab.mjs stages | stage <name> | referee | mutate | restore | lock-rules'); process.exit(1); }
