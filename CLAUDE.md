@@ -11,7 +11,7 @@ Read `docs/money.md` before touching prices. Every amount is whole cents, rounde
 ## Scope
 
 - Do not edit files under `test/` while implementing, except to add tests for the ticket. If an existing test is wrong, say so and stop.
-- Do not edit `scripts/`, `.claude/` or the check configuration.
+- Do not edit `scripts/`, `.claude/`, `.codex/` or the check configuration.
 
 ## When unsure
 
