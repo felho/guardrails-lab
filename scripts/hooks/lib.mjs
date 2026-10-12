@@ -39,9 +39,16 @@ const PROTECTED = [
   /^vite(st)?\.config\.[cm]?[jt]s$/,
 ];
 
+/*
+ * The file's path inside the repository. root is the real path of this script's repository; the agent may name the
+ * file through another spelling of the same directory (a symlink such as /tmp on macOS), so the session cwd is tried
+ * as well, and the first candidate that stays inside the repository wins.
+ */
 export function repoPath(file, cwd = process.cwd()) {
   const abs = isAbsolute(file) ? file : resolve(cwd, file);
-  return relative(root, abs).split('\\').join('/');
+  const candidates = [relative(root, abs), relative(cwd, abs)];
+  const inside = candidates.find((r) => r && !r.startsWith('..') && !isAbsolute(r));
+  return (inside ?? candidates[0]).split('\\').join('/');
 }
 
 export const isProtected = (rel) => PROTECTED.some((re) => re.test(rel.toLowerCase()));
