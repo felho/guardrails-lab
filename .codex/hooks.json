@@ -1,0 +1,25 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "apply_patch|Edit|Write",
+        "hooks": [{ "type": "command", "command": "node scripts/hooks/pre-edit-codex.mjs", "timeout": 30 }]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [{ "type": "command", "command": "node scripts/hooks/pre-bash.mjs", "timeout": 30 }]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "apply_patch|Edit|Write",
+        "hooks": [{ "type": "command", "command": "node scripts/hooks/post-edit-codex.mjs", "timeout": 120 }]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [{ "type": "command", "command": "node scripts/hooks/stop.mjs", "timeout": 600 }]
+      }
+    ]
+  }
+}
