@@ -26,6 +26,7 @@ npm run doctor
 | `npm run referee` | scores the service with the referee: 23 black-box checks over HTTP |
 | `npm run mutate` | a colleague's one-character change at the free-shipping threshold; then `npm test`: do the tests notice? |
 | `npm run restore` | undo the mutation |
+| `npm run lock-rules` | after the rules exercise: the hooks protect `rules/`, `rule-tests/` and `sgconfig.yml`, so the agent cannot loosen a rule |
 | `npm run doctor` | is this laptop ready? |
 | `npm test`, `npm start` | the unit tests, the service on http://localhost:3000 |
 
