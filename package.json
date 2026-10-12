@@ -20,6 +20,7 @@
     "restore": "node scripts/lab.mjs restore"
   },
   "devDependencies": {
+    "@ast-grep/cli": "0.45.3",
     "@eslint/js": "10.0.1",
     "@secretlint/secretlint-rule-preset-recommend": "13.0.7",
     "@types/lodash": "^4.17.20",
